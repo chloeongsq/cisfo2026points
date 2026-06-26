@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Game Master — Operation inCISive</title>
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Orbitron:wght@700;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #05050f;
+  --surface: rgba(255,255,255,0.04);
+  --border: rgba(255,255,255,0.08);
+  --text: #e8e8f0;
+  --muted: #5a5a7a;
+  --accent: #F59E0B;
+  --glow: 0 0 30px rgba(245,158,11,0.3);
+}
+
+body {
+  font-family: 'Space Grotesk', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* — Starfield — */
+canvas#stars {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+}
+
+/* — Header — */
+.header {
+  position: relative; z-index: 10;
+  padding: 28px 32px 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+.logo-block .eyebrow {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.65rem;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.logo-block h1 {
+  font-family: 'Bangers', cursive;
+  font-size: 2.4rem;
+  letter-spacing: 3px;
+  line-height: 1;
+  background: linear-gradient(135deg, #F59E0B 0%, #FDE68A 50%, #F59E0B 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: none;
+  filter: drop-shadow(0 0 20px rgba(245,158,11,0.5));
+}
+.gm-badge {
+  background: rgba(245,158,11,0.15);
+  border: 1px solid rgba(245,158,11,0.4);
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #F59E0B;
+}
+
+/* — Day Selector — */
+.day-selector {
+  position: relative; z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 32px;
+  border-bottom: 1px solid var(--border);
+}
+.day-label {
+  font-size: 0.7rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.day-pills { display: flex; gap: 6px; }
+.day-pill {
+  padding: 7px 20px;
+  border-radius: 99px;
+  border: 1.5px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 1px;
+}
+.day-pill.active {
+  background: rgba(245,158,11,0.15);
+  border-color: #F59E0B;
+  color: #F59E0B;
+}
+
+/* — Main Layout — */
+.main {
+  position: relative; z-index: 10;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 40px 24px 60px;
+}
+
+/* — Protocol steps — */
+.protocol-header {
+  margin-bottom: 36px;
+}
+.protocol-num {
+  font-family: 'Orbitron', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.protocol-title {
+  font-family: 'Bangers', cursive;
+  font-size: 2.8rem;
+  letter-spacing: 2px;
+  line-height: 1.05;
+  margin-top: 4px;
+}
+.protocol-sub {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin-top: 8px;
+}
+
+/* Step nav — minimal progress bar */
+.step-bar {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 40px;
+}
+.step-seg {
+  flex: 1;
+  height: 3px;
+  border-radius: 99px;
+  background: var(--border);
+  transition: background 0.4s;
+}
+.step-seg.done { background: rgba(245,158,11,0.5); }
+.step-seg.active { background: #F59E0B; }
+
+/* — Card — */
+.card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 32px;
+  backdrop-filter: blur(12px);
+}
+
+/* — Field label — */
+.field-label {
+  font-size: 0.65rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+  display: block;
+}
+
+/* — Selects — */
+.select-wrap { position: relative; margin-bottom: 20px; }
+.select-wrap::after {
+  content: '▾';
+  position: absolute; right: 18px; top: 50%;
+  transform: translateY(-50%);
+  color: var(--accent); pointer-events: none;
+  font-size: 1rem;
+}
+select {
+  width: 100%;
+  background: rgba(0,0,0,0.4);
+  border: 1.5px solid var(--border);
+  color: var(--text);
+  padding: 15px 44px 15px 18px;
+  border-radius: 14px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 500;
+  outline: none;
+  appearance: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+}
+select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(245,158,11,0.15);
+}
+select option { background: #10101f; }
+select optgroup { color: var(--muted); font-size: 0.8rem; }
+
+/* — Team option cards — */
+.team-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.team-option {
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1.5px solid var(--border);
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'Space Grotesk', sans-serif;
+}
+.team-option:hover { border-color: rgba(255,255,255,0.2); background: var(--surface); }
+.team-option.selected { border-color: var(--team-color, #F59E0B); background: color-mix(in srgb, var(--team-color, #F59E0B) 15%, transparent); }
+.team-option .t-emoji { font-size: 1.4rem; }
+.team-option .t-name { font-size: 0.85rem; font-weight: 600; color: var(--text); }
+.team-option .t-selected-badge {
+  margin-left: auto;
+  font-size: 0.65rem;
+  background: var(--team-color, #F59E0B);
+  color: #000;
+  padding: 2px 6px;
+  border-radius: 99px;
+  font-weight: 700;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.team-option.selected .t-selected-badge { opacity: 1; }
+
+/* Role labels for sabotage */
+.role-chips { display: flex; gap: 8px; margin-bottom: 14px; }
+.role-chip {
+  padding: 4px 12px;
+  border-radius: 99px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.role-chip.attacker { background: rgba(239,68,68,0.2); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+.role-chip.defender { background: rgba(34,197,94,0.2); color: #4ade80; border: 1px solid rgba(34,197,94,0.3); }
+
+/* Sabotage box */
+.sabotage-banner {
+  background: rgba(239,68,68,0.08);
+  border: 1.5px solid rgba(239,68,68,0.25);
+  border-radius: 14px;
+  padding: 16px 20px;
+  margin: 16px 0;
+  font-size: 0.85rem;
+  color: #fca5a5;
+  line-height: 1.7;
+}
+.sabotage-banner strong { color: #f87171; }
+
+/* — Points section — */
+.points-section { }
+.quick-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.pt-btn {
+  padding: 16px 8px;
+  border-radius: 14px;
+  border: 1.5px solid transparent;
+  font-family: 'Orbitron', monospace;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 1px;
+}
+.pt-btn.pos {
+  background: rgba(34,197,94,0.08);
+  border-color: rgba(34,197,94,0.3);
+  color: #4ade80;
+}
+.pt-btn.pos:hover, .pt-btn.pos:active { background: #22c55e; color: #000; border-color: #22c55e; transform: scale(0.97); }
+.pt-btn.neg {
+  background: rgba(239,68,68,0.08);
+  border-color: rgba(239,68,68,0.3);
+  color: #f87171;
+}
+.pt-btn.neg:hover, .pt-btn.neg:active { background: #ef4444; color: #fff; border-color: #ef4444; transform: scale(0.97); }
+
+.manual-row { display: flex; gap: 8px; }
+.manual-row input {
+  flex: 1;
+  background: rgba(0,0,0,0.4);
+  border: 1.5px solid var(--border);
+  color: var(--text);
+  padding: 14px 16px;
+  border-radius: 12px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.manual-row input:focus { border-color: var(--accent); }
+.manual-row input::placeholder { color: var(--muted); }
+
+/* Tally display */
+.tally-display {
+  margin: 20px 0;
+  background: rgba(0,0,0,0.4);
+  border: 1.5px solid var(--border);
+  border-radius: 18px;
+  padding: 24px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.tally-display::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 50% 100%, var(--tally-glow, rgba(245,158,11,0.08)), transparent 70%);
+  pointer-events: none;
+}
+.tally-lbl { font-size: 0.6rem; letter-spacing: 4px; text-transform: uppercase; color: var(--muted); }
+.tally-val {
+  font-family: 'Orbitron', monospace;
+  font-size: 3.5rem;
+  font-weight: 900;
+  margin-top: 8px;
+  line-height: 1;
+  transition: color 0.3s;
+}
+.tally-val.pos { color: #4ade80; }
+.tally-val.neg { color: #f87171; }
+.tally-val.zero { color: var(--muted); }
+.tally-reset {
+  margin-top: 12px;
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  padding: 6px 16px;
+  border-radius: 99px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-family: 'Space Grotesk', sans-serif;
+  transition: all 0.2s;
+}
+.tally-reset:hover { border-color: var(--muted); color: var(--text); }
+
+/* — Divider — */
+.divider {
+  height: 1px; background: var(--border);
+  margin: 28px 0;
+  position: relative;
+}
+.divider::after {
+  content: attr(data-label);
+  position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  background: #0d0d20;
+  padding: 0 12px;
+  font-size: 0.65rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* — Timer — */
+.timer-face {
+  text-align: center;
+  margin: 16px 0;
+}
+.timer-time {
+  font-family: 'Orbitron', monospace;
+  font-size: 4.5rem;
+  font-weight: 900;
+  letter-spacing: 4px;
+  color: #38BDF8;
+  transition: color 0.3s;
+  line-height: 1;
+}
+.timer-time.warn { color: #F97316; }
+.timer-time.danger { color: #ef4444; animation: blink-timer 0.4s infinite alternate; }
+@keyframes blink-timer { from { opacity: 1; } to { opacity: 0.3; } }
+
+.timer-presets {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 14px 0;
+}
+.timer-preset {
+  padding: 11px;
+  border-radius: 12px;
+  border: 1.5px solid var(--border);
+  background: transparent;
+  color: #88aabb;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.timer-preset:hover { border-color: #38BDF8; color: #38BDF8; background: rgba(56,189,248,0.08); }
+.timer-preset.selected { border-color: #38BDF8; color: #38BDF8; background: rgba(56,189,248,0.12); }
+
+.timer-controls { display: flex; gap: 8px; margin-top: 12px; }
+.timer-controls button { flex: 1; }
+
+/* — Buttons — */
+.btn {
+  padding: 15px 24px;
+  border: none;
+  border-radius: 14px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.5px;
+  width: 100%;
+}
+.btn-primary {
+  background: linear-gradient(135deg, #F59E0B, #F97316);
+  color: #000;
+}
+.btn-primary:hover { opacity: 0.88; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(245,158,11,0.3); }
+.btn-ghost {
+  background: transparent;
+  border: 1.5px solid var(--border);
+  color: var(--muted);
+}
+.btn-ghost:hover { border-color: rgba(255,255,255,0.2); color: var(--text); }
+.btn-submit {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: #fff;
+  font-size: 1rem;
+  padding: 18px;
+  box-shadow: 0 4px 24px rgba(34,197,94,0.2);
+}
+.btn-submit:hover { box-shadow: 0 8px 32px rgba(34,197,94,0.35); transform: translateY(-2px); }
+
+.btn-row { display: flex; gap: 10px; margin-top: 24px; }
+.btn-row .btn { flex: 1; }
+
+/* — Summary card — */
+.summary-card {
+  background: rgba(0,0,0,0.3);
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  padding: 18px 20px;
+  margin: 20px 0 0;
+  font-size: 0.88rem;
+  line-height: 2;
+  color: var(--muted);
+}
+.summary-card strong { color: var(--text); }
+.summary-card .pts-preview {
+  font-family: 'Orbitron', monospace;
+  font-weight: 700;
+}
+.pts-pos { color: #4ade80; }
+.pts-neg { color: #f87171; }
+
+/* — Toast — */
+.toast {
+  position: fixed; top: 24px; left: 50%;
+  transform: translateX(-50%) translateY(-120px);
+  background: #22c55e;
+  color: #fff;
+  padding: 14px 28px;
+  border-radius: 14px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 0.95rem;
+  z-index: 999;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+.toast.err { background: #ef4444; }
+
+/* — Step visibility — */
+.step { display: none; }
+.step.active { display: block; }
+
+/* Sabotage auto section */
+.sabotage-auto {
+  background: rgba(239,68,68,0.07);
+  border: 1.5px solid rgba(239,68,68,0.2);
+  border-radius: 16px;
+  padding: 24px;
+  text-align: center;
+}
+.sabotage-auto .big-num {
+  font-family: 'Orbitron', monospace;
+  font-size: 2.5rem;
+  font-weight: 900;
+}
+</style>
+</head>
+<body>
+<canvas id="stars"></canvas>
+
+<div class="header">
+  <div class="logo-block">
+    <div class="eyebrow">Operation inCISive · Multiverse of Minions</div>
+    <h1>GAME MASTER</h1>
+  </div>
+  <div class="gm-badge">🎮 GM Console</div>
+</div>
+
+<div class="day-selector">
+  <span class="day-label">Mission Phase</span>
+  <div class="day-pills">
+    <button class="day-pill active" data-day="1" onclick="setDay(1)">DAY 1 — Fix the Portal</button>
+    <button class="day-pill" data-day="2" onclick="setDay(2)">DAY 2 — Find Gru</button>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- Progress bar -->
+  <div class="step-bar">
+    <div class="step-seg active" id="seg1"></div>
+    <div class="step-seg" id="seg2"></div>
+    <div class="step-seg" id="seg3"></div>
+  </div>
+
+  <!-- STEP 1 -->
+  <div class="step active" id="step1">
+    <div class="protocol-header">
+      <div class="protocol-num">Protocol 01 / 03</div>
+      <div class="protocol-title">Select<br>Activity</div>
+      <div class="protocol-sub">Choose the game or event to score</div>
+    </div>
+    <div class="card">
+      <span class="field-label">Activity</span>
+      <div class="select-wrap">
+        <select id="gameSelect" onchange="onGameChange()">
+          <option value="">— Choose an activity —</option>
+        </select>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="goStep(2)">Next Protocol →</button>
+    </div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="step" id="step2">
+    <div class="protocol-header">
+      <div class="protocol-num">Protocol 02 / 03</div>
+      <div class="protocol-title">Select<br>Universe(s)</div>
+      <div class="protocol-sub" id="step2Sub">Pick the team(s) competing</div>
+    </div>
+    <div class="card">
+
+      <div id="sabotageRoles" class="role-chips" style="display:none">
+        <div class="role-chip attacker">⚔️ Sabotager — Team 1</div>
+      </div>
+      <span class="field-label" id="t1Label">Team</span>
+      <div class="team-grid" id="teamGrid1"></div>
+
+      <div id="team2Section" style="display:none; margin-top:4px;">
+        <div id="sabotageRole2" class="role-chips" style="display:none">
+          <div class="role-chip defender">🛡️ Sabotaged — Team 2</div>
+        </div>
+        <span class="field-label" id="t2Label">vs. Team</span>
+        <div class="team-grid" id="teamGrid2"></div>
+      </div>
+
+      <div id="sabotageBanner" class="sabotage-banner" style="display:none">
+        🔥 <strong>Sabotage!</strong> The sabotaging team automatically gains
+        <strong id="saboWin">+50 pts</strong> and the sabotaged team loses
+        <strong id="saboLose">−50 pts</strong>. Applied on submit.
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="goStep(1)">← Back</button>
+      <button class="btn btn-primary" onclick="goStep(3)">Next Protocol →</button>
+    </div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div class="step" id="step3">
+    <div class="protocol-header">
+      <div class="protocol-num">Protocol 03 / 03</div>
+      <div class="protocol-title">Points &amp;<br>Timer</div>
+      <div class="protocol-sub">Tally up and start the clock</div>
+    </div>
+    <div class="card">
+
+      <!-- NORMAL POINTS -->
+      <div id="normalPoints">
+        <span class="field-label">Quick Points</span>
+        <div class="quick-grid">
+          <button class="pt-btn pos" onclick="addPts(10)">+10</button>
+          <button class="pt-btn pos" onclick="addPts(50)">+50</button>
+          <button class="pt-btn pos" onclick="addPts(100)">+100</button>
+          <button class="pt-btn neg" onclick="addPts(-10)">−10</button>
+          <button class="pt-btn neg" onclick="addPts(-50)">−50</button>
+          <button class="pt-btn neg" onclick="addPts(-100)">−100</button>
+        </div>
+        <div class="manual-row">
+          <input type="number" id="manualPts" placeholder="Custom (e.g. 75 or −30)" />
+          <button class="btn btn-ghost" style="flex:0;width:auto;padding:14px 18px;" onclick="addManual()">Add</button>
+        </div>
+
+        <div class="tally-display" id="tallyBox">
+          <div class="tally-lbl">Running Tally</div>
+          <div class="tally-val zero" id="tallyVal">0</div>
+          <button class="tally-reset" onclick="resetTally()">↺ Reset</button>
+        </div>
+      </div>
+
+      <!-- SABOTAGE AUTO -->
+      <div id="sabotageAuto" style="display:none;">
+        <div class="sabotage-auto">
+          <div style="font-size:2rem; margin-bottom:8px;">🔥</div>
+          <div style="font-size:0.8rem; letter-spacing:2px; text-transform:uppercase; color:var(--muted); margin-bottom:16px;">Sabotage — Auto-scored</div>
+          <div style="color:#4ade80; margin-bottom:4px;"><span id="autoAttacker">—</span> <span class="big-num" style="color:#4ade80">+50</span></div>
+          <div style="color:#f87171;"><span id="autoTarget">—</span> <span class="big-num" style="color:#f87171">−50</span></div>
+        </div>
+      </div>
+
+      <div class="divider" data-label="Timer"></div>
+
+      <div class="timer-face">
+        <div class="timer-time" id="timerDisp">00:00</div>
+      </div>
+      <div class="timer-presets">
+        <button class="timer-preset" onclick="setTimer(1)">1 min</button>
+        <button class="timer-preset" onclick="setTimer(3)">3 min</button>
+        <button class="timer-preset" onclick="setTimer(5)">5 min</button>
+        <button class="timer-preset" onclick="setTimer(10)">10 min</button>
+        <button class="timer-preset" onclick="setTimer(15)">15 min</button>
+        <button class="timer-preset" onclick="setTimer(20)">20 min</button>
+      </div>
+      <div class="manual-row" style="margin-top:0;">
+        <input type="number" id="customMin" placeholder="Custom minutes" min="1" max="99" />
+        <button class="btn btn-ghost" style="flex:0;width:auto;padding:14px 18px;" onclick="setCustomTimer()">Set</button>
+      </div>
+      <div class="timer-controls">
+        <button class="btn btn-ghost" id="timerToggle" onclick="toggleTimer()">▶ Start</button>
+        <button class="btn btn-ghost" style="flex:0;width:auto;padding:15px 18px;" onclick="resetTimer()">↺</button>
+      </div>
+
+      <div class="summary-card" id="summaryCard">—</div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="goStep(2)" style="flex:0;width:auto;padding:15px 20px;">←</button>
+      <button class="btn btn-submit" onclick="submitPoints()">✓ Confirm &amp; Submit</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── State ──────────────────────────────────────────────
+let games = [], teams = [];
+let selectedGame = null;
+let team1Id = null, team2Id = null;
+let tally = 0;
+let currentDay = 1;
+let timerSec = 0, timerRunning = false, timerInterval = null;
+
+// ── Starfield ──────────────────────────────────────────
+(function() {
+  const c = document.getElementById('stars');
+  const ctx = c.getContext('2d');
+  let W, H, stars = [];
+  function resize() { W = c.width = innerWidth; H = c.height = innerHeight; }
+  function mkStar() {
+    return { x: Math.random()*W, y: Math.random()*H,
+             r: Math.random()*1.2, a: Math.random(), da: (Math.random()-0.5)*0.005 };
+  }
+  function init() { resize(); stars = Array.from({length:120}, mkStar); }
+  function draw() {
+    ctx.clearRect(0,0,W,H);
+    for (const s of stars) {
+      s.a = Math.max(0.05, Math.min(1, s.a + s.da));
+      if (s.a <= 0.05 || s.a >= 1) s.da *= -1;
+      ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+      ctx.fillStyle = `rgba(200,200,255,${s.a})`;
+      ctx.fill();
+    }
+    requestAnimationFrame(draw);
+  }
+  window.addEventListener('resize', resize);
+  init(); draw();
+})();
+
+// ── Data loading ───────────────────────────────────────
+async function load() {
+  [games, teams] = await Promise.all([
+    fetch('/api/games').then(r=>r.json()),
+    fetch('/api/teams-live').then(r=>r.json()),
+  ]);
+  renderGameSelect();
+  renderTeamGrids();
+}
+
+function renderGameSelect() {
+  const sel = document.getElementById('gameSelect');
+  sel.innerHTML = '<option value="">— Choose an activity —</option>';
+  const cats = { game: '🎮 Games', misc: '⭐ Misc', sabotage: '🔥 Sabotage' };
+  const grouped = {};
+  for (const g of games) { (grouped[g.category]??=[]).push(g); }
+  for (const [cat, label] of Object.entries(cats)) {
+    if (!grouped[cat]) continue;
+    const og = document.createElement('optgroup');
+    og.label = label;
+    for (const g of grouped[cat]) {
+      const o = document.createElement('option');
+      o.value = g.id;
+      o.textContent = g.name + (g.team_count===2 ? ' (2 teams)' : '');
+      og.appendChild(o);
+    }
+    sel.appendChild(og);
+  }
+}
+
+function renderTeamGrids() {
+  ['teamGrid1','teamGrid2'].forEach(id => {
+    const grid = document.getElementById(id);
+    grid.innerHTML = teams.map(t => `
+      <button class="team-option" style="--team-color:${t.color}"
+        data-id="${t.id}" data-grid="${id}" onclick="selectTeam('${id}','${t.id}')">
+        <span class="t-emoji">${t.emoji}</span>
+        <span class="t-name">${t.name}</span>
+        <span class="t-selected-badge">✓</span>
+      </button>
+    `).join('');
+  });
+}
+
+function selectTeam(gridId, teamId) {
+  document.querySelectorAll(`#${gridId} .team-option`).forEach(el => el.classList.remove('selected'));
+  document.querySelector(`#${gridId} [data-id="${teamId}"]`).classList.add('selected');
+  if (gridId === 'teamGrid1') team1Id = teamId;
+  else team2Id = teamId;
+  updateSummary();
+}
+
+function onGameChange() {
+  const id = document.getElementById('gameSelect').value;
+  selectedGame = games.find(g=>g.id===id) || null;
+}
+
+function setDay(d) {
+  currentDay = d;
+  document.querySelectorAll('.day-pill').forEach(el => el.classList.toggle('active', +el.dataset.day===d));
+}
+
+// ── Step navigation ────────────────────────────────────
+function goStep(n) {
+  if (n===2) {
+    if (!selectedGame) { toast('Select an activity first!', true); return; }
+    const isSabo = selectedGame.category==='sabotage';
+    const two = selectedGame.team_count===2;
+    document.getElementById('team2Section').style.display = two ? 'block' : 'none';
+    document.getElementById('sabotageBanner').style.display = isSabo ? 'block' : 'none';
+    document.getElementById('sabotageRoles').style.display = isSabo ? 'flex' : 'none';
+    document.getElementById('sabotageRole2').style.display = isSabo ? 'flex' : 'none';
+    document.getElementById('t1Label').textContent = isSabo ? 'Sabotaging Team' : 'Team';
+    document.getElementById('t2Label').textContent = isSabo ? 'Sabotaged Team' : 'vs. Team';
+    document.getElementById('step2Sub').textContent = isSabo
+      ? 'Who sabotages whom?' : two ? 'Pick both competing teams' : 'Which universe is playing?';
+    team1Id = null; team2Id = null;
+    renderTeamGrids();
+  }
+  if (n===3) {
+    if (!team1Id) { toast('Select a team!', true); return; }
+    if (selectedGame.team_count===2 && !team2Id) { toast('Select both teams!', true); return; }
+    if (team1Id===team2Id) { toast('Teams must be different!', true); return; }
+    const isSabo = selectedGame.category==='sabotage';
+    document.getElementById('normalPoints').style.display = isSabo ? 'none' : 'block';
+    document.getElementById('sabotageAuto').style.display = isSabo ? 'block' : 'none';
+    if (isSabo) {
+      const at = teams.find(t=>t.id===team1Id);
+      const tg = teams.find(t=>t.id===team2Id);
+      document.getElementById('autoAttacker').textContent = at.emoji+' '+at.name;
+      document.getElementById('autoTarget').textContent = tg.emoji+' '+tg.name;
+    }
+    updateSummary();
+  }
+  // Animate segments
+  ['seg1','seg2','seg3'].forEach((id,i) => {
+    document.getElementById(id).className = 'step-seg' + (i+1<n?' done':i+1===n?' active':'');
+  });
+  document.querySelectorAll('.step').forEach(el=>el.classList.remove('active'));
+  document.getElementById('step'+n).classList.add('active');
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+// ── Points ─────────────────────────────────────────────
+function addPts(v) {
+  tally += v;
+  updateTally();
+  // Flash the tally
+  const box = document.getElementById('tallyBox');
+  box.style.transform = 'scale(1.04)';
+  setTimeout(()=>box.style.transform='',200);
+}
+function addManual() {
+  const v = parseInt(document.getElementById('manualPts').value);
+  if (isNaN(v)) { toast('Enter a valid number', true); return; }
+  document.getElementById('manualPts').value = '';
+  addPts(v);
+}
+function resetTally() { tally=0; updateTally(); }
+function updateTally() {
+  const el = document.getElementById('tallyVal');
+  el.textContent = (tally>0?'+':'')+tally;
+  el.className = 'tally-val' + (tally>0?' pos':tally<0?' neg':' zero');
+  document.getElementById('tallyBox').style.setProperty('--tally-glow',
+    tally>0?'rgba(74,222,128,0.1)':tally<0?'rgba(248,113,113,0.1)':'rgba(245,158,11,0.08)');
+  updateSummary();
+}
+function updateSummary() {
+  const t1 = teams.find(t=>t.id===team1Id);
+  const t2 = teams.find(t=>t.id===team2Id);
+  const isSabo = selectedGame?.category==='sabotage';
+  let html = `<strong>${selectedGame?.name||'—'}</strong> · Day ${currentDay}<br>`;
+  if (t1) html += `${t1.emoji} ${t1.name}`;
+  if (t2) html += ` <span style="color:var(--muted)">vs</span> ${t2.emoji} ${t2.name}`;
+  html += '<br>';
+  if (isSabo) {
+    html += `Points: <span class="pts-preview pts-pos">+50</span> / <span class="pts-preview pts-neg">−50</span> (automatic)`;
+  } else {
+    const cls = tally>=0?'pts-pos':'pts-neg';
+    html += `Submitting: <span class="pts-preview ${cls}">${tally>0?'+':''}${tally} pts</span>`;
+  }
+  document.getElementById('summaryCard').innerHTML = html;
+}
+
+// ── Submit ─────────────────────────────────────────────
+async function submitPoints() {
+  const isSabo = selectedGame.category==='sabotage';
+  const body = {
+    game_id: selectedGame.id,
+    game_name: selectedGame.name,
+    team1_id: team1Id,
+    event_type: selectedGame.category,
+    day: currentDay,
+  };
+  if (isSabo) {
+    body.team2_id = team2Id;
+    body.points1 = 50; body.points2 = -50;
+    const at = teams.find(t=>t.id===team1Id);
+    const tg = teams.find(t=>t.id===team2Id);
+    body.note = `${at.name} sabotaged ${tg.name}`;
+  } else {
+    body.points1 = tally;
+    if (selectedGame.team_count===2) { body.team2_id = team2Id; body.points2 = 0; }
+  }
+  const res = await fetch('/api/submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if (res.ok) {
+    toast('✓ Points submitted!');
+    tally=0; updateTally();
+    selectedGame=null; team1Id=null; team2Id=null;
+    document.getElementById('gameSelect').value='';
+    goStep(1);
+  } else { toast('Submission failed', true); }
+}
+
+// ── Timer ──────────────────────────────────────────────
+function setTimer(m) {
+  if (timerRunning) stopTimer();
+  timerSec = m*60;
+  document.querySelectorAll('.timer-preset').forEach(el=>el.classList.remove('selected'));
+  event?.target?.classList.add('selected');
+  renderTimer();
+}
+function setCustomTimer() {
+  const v = parseInt(document.getElementById('customMin').value);
+  if (v>0) setTimer(v);
+}
+function renderTimer() {
+  const m = String(Math.floor(timerSec/60)).padStart(2,'0');
+  const s = String(timerSec%60).padStart(2,'0');
+  const el = document.getElementById('timerDisp');
+  el.textContent = m+':'+s;
+  el.className = 'timer-time'+(timerSec<=10&&timerSec>0?' danger':timerSec<=30&&timerSec>0?' warn':'');
+}
+function toggleTimer() {
+  timerRunning ? stopTimer() : startTimer();
+}
+function startTimer() {
+  if (timerSec<=0) return;
+  timerRunning=true;
+  document.getElementById('timerToggle').textContent='⏸ Pause';
+  timerInterval=setInterval(()=>{
+    timerSec--;
+    renderTimer();
+    if (timerSec<=0){stopTimer();playAlarm();}
+  },1000);
+}
+function stopTimer() {
+  timerRunning=false;
+  clearInterval(timerInterval);
+  document.getElementById('timerToggle').textContent='▶ Start';
+}
+function resetTimer() { stopTimer(); timerSec=0; renderTimer(); }
+function playAlarm() {
+  try {
+    const ctx = new AudioContext();
+    // Minion-ish jingle: playful ascending notes
+    const seq = [523,659,784,659,784,1047,784,1047];
+    let t = ctx.currentTime;
+    seq.forEach((f,i)=>{
+      const o=ctx.createOscillator(), g=ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.type=i%2===0?'square':'sawtooth';
+      o.frequency.value=f;
+      g.gain.setValueAtTime(0.25,t);
+      g.gain.exponentialRampToValueAtTime(0.001,t+0.28);
+      o.start(t); o.stop(t+0.28);
+      t+=0.22;
+    });
+  } catch(e){}
+}
+
+// ── Toast ──────────────────────────────────────────────
+function toast(msg, err) {
+  const el=document.getElementById('toast');
+  el.textContent=msg;
+  el.className='toast'+(err?' err':'')+' show';
+  setTimeout(()=>el.className='toast'+(err?' err':''),2600);
+}
+
+load();
+</script>
+</body>
+</html>

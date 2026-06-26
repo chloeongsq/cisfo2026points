@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm init *)",
+      "Bash(npm install *)",
+      "Bash(brew list *)",
+      "Bash(python3 -c \"import sqlite3, http.server, json, uuid; print\\('stdlib ok'\\)\")",
+      "Bash(python3 -m pip list)",
+      "Bash(python3 -m pip install flask flask-sock)",
+      "Bash(python3 app.py)",
+      "Bash(curl -s http://localhost:5000/api/teams)",
+      "Bash(python3 -m json.tool)",
+      "Bash(lsof -ti:5000)",
+      "Bash(kill 593)",
+      "Bash(python3 /Users/cong/my-project/app.py)",
+      "Bash(lsof -i:5000 -sTCP:LISTEN)",
+      "Bash(curl -s http://localhost:8080/api/teams)",
+      "Bash(curl -s -X POST http://localhost:8080/api/submit -H 'Content-Type: application/json' -d '{\"game_id\":\"g1\",\"game_name\":\"Quiz Bee\",\"team1_id\":\"team1\",\"points1\":100,\"event_type\":\"game\"}')",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); [print\\(t['name'], t['total_points']\\) for t in d]\")",
+      "Bash(curl -s -X POST http://localhost:8080/api/submit -H 'Content-Type: application/json' -d '{\"game_id\":\"g2\",\"game_name\":\"Sabotage\",\"team1_id\":\"team3\",\"team2_id\":\"team2\",\"points1\":50,\"points2\":-50,\"event_type\":\"sabotage\",\"note\":\"Team Phoenix sabotaged Team Olympus\"}')",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); [print\\(f'{t[\\\\\"name\\\\\"]}: {t[\\\\\"total_points\\\\\"]} pts'\\) for t in d]\")",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(pkill -f \"python3.*app.py\")",
+      "Bash(curl -s http://localhost:8080/api/teams-live)",
+      "Bash(python3 -c \"import json,sys; [print\\(t['emoji'],t['name'],t['total_points']\\) for t in json.load\\(sys.stdin\\)]\")",
+      "Bash(lsof -i:8080 -sTCP:LISTEN)",
+      "Bash(awk 'NR>1{print $2}')",
+      "Bash(xargs kill -9)",
+      "Bash(curl -s -X POST http://localhost:8080/api/auth -H \"Content-Type:application/json\" -d '{\"password\":\"minion2026\"}')",
+      "Bash(curl -s -X POST http://localhost:8080/api/submit -H Content-Type:application/json -d '{\"game_name\":\"Trivia Night\",\"team1_id\":\"team5\",\"points1\":200,\"event_type\":\"game\",\"day\":2}')",
+      "Bash(curl -s \"http://localhost:8080/api/teams-live?day=2\")",
+      "Bash(python3 -c \"import json,sys; [print\\(t['emoji'],t['name'],t['total_points']\\) for t in json.load\\(sys.stdin\\) if t['total_points']!=0]\")",
+      "Bash(curl -s -X POST http://localhost:8080/api/auth -H \"Content-Type:application/json\" -d '{\"password\":\"wrong\"}')",
+      "Bash(curl -s \"http://localhost:8080/api/teams-live?day=1\")",
+      "Bash(pip3 freeze *)"
+    ]
+  }
+}

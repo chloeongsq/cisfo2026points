@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "tracker",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["/Users/cong/my-project/app.py"],
+      "port": 8080
+    }
+  ]
+}
