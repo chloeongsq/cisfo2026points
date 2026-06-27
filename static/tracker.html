@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OC Tracker — Operation inCISive</title>
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Orbitron:wght@700;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #05050f;
+  --surface: rgba(255,255,255,0.04);
+  --border: rgba(255,255,255,0.07);
+  --text: #e8e8f0;
+  --muted: #4a4a6a;
+}
+
+body {
+  font-family: 'Space Grotesk', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+canvas#bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+
+/* ─── PASSWORD GATE ─── */
+.pw-gate {
+  position: fixed; inset: 0; z-index: 1000;
+  background: #05050f;
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column;
+  gap: 0;
+}
+.pw-gate.hidden { display: none; }
+
+.pw-inner {
+  text-align: center;
+  width: 100%; max-width: 380px;
+  padding: 0 24px;
+}
+.pw-icon { font-size: 4rem; margin-bottom: 24px; animation: float 3s ease-in-out infinite; }
+@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+.pw-title {
+  font-family: 'Bangers', cursive;
+  font-size: 3rem;
+  letter-spacing: 3px;
+  background: linear-gradient(135deg,#F59E0B,#FDE68A);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  filter: drop-shadow(0 0 20px rgba(245,158,11,0.4));
+  margin-bottom: 6px;
+}
+.pw-sub {
+  color: var(--muted);
+  font-size: 0.8rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 36px;
+}
+.pw-field {
+  position: relative;
+  margin-bottom: 16px;
+}
+.pw-field input {
+  width: 100%;
+  background: rgba(255,255,255,0.05);
+  border: 1.5px solid rgba(255,255,255,0.1);
+  color: var(--text);
+  padding: 16px 20px;
+  border-radius: 16px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1rem;
+  letter-spacing: 4px;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.pw-field input:focus {
+  border-color: #F59E0B;
+  box-shadow: 0 0 0 3px rgba(245,158,11,0.15);
+}
+.pw-field input.shake { animation: shake 0.4s ease; }
+@keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-8px)} 40%,80%{transform:translateX(8px)} }
+.pw-btn {
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(135deg,#F59E0B,#F97316);
+  border: none; border-radius: 16px;
+  font-family: 'Bangers', cursive;
+  font-size: 1.4rem;
+  letter-spacing: 3px;
+  color: #000;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.pw-btn:hover { opacity: 0.88; transform: translateY(-2px); }
+.pw-error { color: #f87171; font-size: 0.8rem; margin-top: 10px; min-height: 20px; }
+
+/* ─── HEADER ─── */
+.topbar {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(5,5,15,0.85);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px;
+  display: flex; align-items: stretch; gap: 0;
+  height: 64px;
+}
+.topbar-left {
+  display: flex; align-items: center; gap: 16px;
+  flex: 1;
+}
+.logo {
+  font-family: 'Bangers', cursive;
+  font-size: 1.6rem;
+  letter-spacing: 2px;
+  background: linear-gradient(135deg,#F59E0B,#FDE68A);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  filter: drop-shadow(0 0 10px rgba(245,158,11,0.3));
+  white-space: nowrap;
+}
+.live-indicator {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--muted);
+}
+.live-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 6px #22c55e;
+  animation: livepulse 2s infinite;
+}
+@keyframes livepulse { 0%,100%{opacity:1;box-shadow:0 0 6px #22c55e} 50%{opacity:0.4;box-shadow:0 0 2px #22c55e} }
+
+.topbar-center {
+  display: flex; align-items: center; gap: 4px;
+  padding: 0 24px;
+}
+.day-tab {
+  padding: 8px 20px;
+  border-radius: 99px;
+  border: 1.5px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.day-tab.active {
+  border-color: rgba(245,158,11,0.5);
+  color: #F59E0B;
+  background: rgba(245,158,11,0.1);
+}
+
+.topbar-right {
+  display: flex; align-items: center; gap: 8px;
+}
+.nav-btn {
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1.5px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.nav-btn.active, .nav-btn:hover { border-color: rgba(255,255,255,0.2); color: var(--text); }
+
+/* ─── MAIN ─── */
+.main {
+  position: relative; z-index: 10;
+  padding: 0 32px 100px;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+/* ─── CLIMBING WALL ─── */
+.wall-section { padding: 40px 0; }
+.wall-eyebrow {
+  font-size: 0.6rem; letter-spacing: 4px; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 8px;
+}
+.wall-heading {
+  font-family: 'Bangers', cursive;
+  font-size: 3.5rem;
+  letter-spacing: 3px;
+  line-height: 1;
+  margin-bottom: 40px;
+}
+
+.wall-container {
+  position: relative;
+  height: 420px;
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 0 4px;
+  border-bottom: 1.5px solid var(--border);
+}
+
+/* Horizontal grid lines */
+.wall-container::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to top,
+    transparent 0px,
+    transparent calc(25% - 1px),
+    rgba(255,255,255,0.04) calc(25% - 1px),
+    rgba(255,255,255,0.04) 25%
+  );
+  pointer-events: none;
+}
+
+.wall-col {
+  flex: 1;
+  height: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+}
+.wall-bubble-track {
+  position: absolute;
+  bottom: 0; top: 0;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.wall-bubble {
+  position: absolute;
+  bottom: 0;
+  transition: bottom 1.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  width: 100%;
+}
+.wall-bubble:hover .bubble-card { transform: scale(1.06); }
+.bubble-rank {
+  font-family: 'Orbitron', monospace;
+  font-size: 0.55rem;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: var(--muted);
+}
+.bubble-card {
+  width: 80%;
+  max-width: 110px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--team-color, #888);
+  background: radial-gradient(circle at 35% 35%, color-mix(in srgb, var(--team-color) 20%, #05050f), #05050f);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--team-color) 30%, transparent),
+              inset 0 0 20px color-mix(in srgb, var(--team-color) 5%, transparent);
+  transition: transform 0.2s, box-shadow 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+.bubble-card::after {
+  content: '';
+  position: absolute;
+  top: 12%; left: 20%;
+  width: 30%; height: 20%;
+  background: rgba(255,255,255,0.15);
+  border-radius: 50%;
+  transform: rotate(-30deg);
+}
+.bubble-card.rank1 {
+  box-shadow: 0 0 40px color-mix(in srgb, var(--team-color) 60%, transparent),
+              inset 0 0 20px color-mix(in srgb, var(--team-color) 10%, transparent);
+}
+.bubble-emoji { font-size: 1.8rem; line-height: 1; }
+.bubble-pts {
+  font-family: 'Orbitron', monospace;
+  font-size: 0.65rem;
+  font-weight: 900;
+  color: var(--team-color);
+  letter-spacing: 1px;
+}
+.bubble-name {
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-align: center;
+  padding: 0 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+  text-align: center;
+}
+
+/* zero-state pillar */
+.wall-col-floor {
+  position: absolute;
+  bottom: 0;
+  width: 90%;
+  height: 2px;
+  background: var(--team-color, #888);
+  opacity: 0.2;
+  border-radius: 99px;
+}
+
+/* Wall Y-axis labels */
+.wall-yaxis {
+  position: absolute;
+  left: -40px; top: 0; bottom: 0;
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: space-between;
+  padding: 0 0 2px;
+}
+.wall-ylabel {
+  font-family: 'Orbitron', monospace;
+  font-size: 0.5rem;
+  color: var(--muted);
+  letter-spacing: 1px;
+}
+
+/* ─── RANKING LIST (detail) ─── */
+.rankings-section { padding-top: 32px; }
+.section-eyebrow {
+  font-size: 0.6rem; letter-spacing: 4px; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 16px;
+}
+.ranking-list { display: flex; flex-direction: column; gap: 8px; }
+.rank-card {
+  display: flex; align-items: center; gap: 16px;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 16px 22px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative; overflow: hidden;
+}
+.rank-card::before {
+  content: '';
+  position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  background: var(--team-color, transparent);
+  border-radius: 3px 0 0 3px;
+}
+.rank-card:hover { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.12); transform: translateX(3px); }
+
+.rc-rank {
+  font-family: 'Orbitron', monospace;
+  font-size: 1rem; font-weight: 900;
+  color: var(--muted); width: 28px;
+}
+.rc-rank.top { color: var(--team-color, #888); }
+.rc-emoji { font-size: 1.8rem; }
+.rc-info { flex: 1; }
+.rc-name { font-size: 0.95rem; font-weight: 700; }
+.rc-sub { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+.rc-bar-wrap {
+  flex: 2; max-width: 220px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 99px; height: 6px; overflow: hidden;
+}
+.rc-bar {
+  height: 100%; border-radius: 99px;
+  background: var(--team-color, #888);
+  transition: width 1s cubic-bezier(0.34,1.56,0.64,1);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--team-color) 60%, transparent);
+}
+.rc-pts {
+  text-align: right; min-width: 72px;
+}
+.rc-pts-val {
+  font-family: 'Orbitron', monospace;
+  font-size: 1.1rem; font-weight: 900;
+  color: var(--team-color, #888);
+}
+.rc-pts-delta {
+  font-size: 0.7rem; color: #4ade80;
+  margin-top: 2px; min-height: 16px;
+  transition: opacity 0.4s;
+  opacity: 0;
+}
+.rc-pts-delta.show { opacity: 1; }
+
+/* ─── TEAM DETAIL PANEL ─── */
+.detail-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(8px);
+  display: flex; justify-content: flex-end;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.3s;
+}
+.detail-overlay.open { opacity: 1; pointer-events: all; }
+.detail-panel {
+  width: 100%; max-width: 480px;
+  height: 100%;
+  background: #0a0a1c;
+  border-left: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  overflow: hidden;
+}
+.detail-overlay.open .detail-panel { transform: translateX(0); }
+
+.detail-hero {
+  padding: 40px 32px 32px;
+  position: relative;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.detail-hero::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 50% 100%, var(--hero-color, rgba(245,158,11,0.12)), transparent 70%);
+  pointer-events: none;
+}
+.detail-close {
+  position: absolute; top: 16px; right: 20px;
+  background: none; border: 1px solid var(--border);
+  color: var(--muted); width: 36px; height: 36px;
+  border-radius: 50%; cursor: pointer; font-size: 1rem;
+  transition: all 0.2s; display: flex; align-items: center; justify-content: center;
+}
+.detail-close:hover { border-color: var(--text); color: var(--text); }
+.detail-emoji { font-size: 3.5rem; margin-bottom: 12px; }
+.detail-universe {
+  font-family: 'Bangers', cursive;
+  font-size: 2.2rem;
+  letter-spacing: 2px;
+  color: var(--hero-color-solid, #fff);
+  line-height: 1;
+}
+.detail-pts {
+  font-family: 'Orbitron', monospace;
+  font-size: 3rem; font-weight: 900;
+  margin-top: 10px;
+  color: var(--hero-color-solid, #fff);
+}
+.detail-rank-badge {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 4px 14px;
+  border-radius: 99px;
+  font-size: 0.7rem; font-weight: 700;
+  letter-spacing: 2px; text-transform: uppercase;
+  background: rgba(255,255,255,0.08);
+  color: var(--muted);
+}
+
+.detail-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 32px;
+}
+.detail-body::-webkit-scrollbar { width: 4px; }
+.detail-body::-webkit-scrollbar-track { background: transparent; }
+.detail-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+
+.detail-section-title {
+  font-size: 0.6rem; letter-spacing: 4px; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 16px;
+}
+
+/* Event items */
+.ev-item {
+  background: rgba(255,255,255,0.025);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 18px;
+  margin-bottom: 8px;
+  display: flex; align-items: center; gap: 14px;
+  transition: background 0.2s;
+  position: relative;
+}
+.ev-item:hover { background: rgba(255,255,255,0.04); }
+.ev-item.ev-pos { border-left: 3px solid #22c55e; }
+.ev-item.ev-neg { border-left: 3px solid #ef4444; }
+.ev-item.ev-sabo { border-left: 3px solid #f97316; }
+.ev-icon { font-size: 1.4rem; flex-shrink: 0; }
+.ev-content { flex: 1; min-width: 0; }
+.ev-name { font-weight: 700; font-size: 0.88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ev-note { font-size: 0.75rem; color: var(--muted); margin-top: 3px; }
+.ev-time { font-size: 0.7rem; color: var(--muted); margin-top: 3px; font-variant-numeric: tabular-nums; }
+.ev-pts { font-family: 'Orbitron', monospace; font-size: 1rem; font-weight: 900; flex-shrink: 0; }
+.ev-pts.pos { color: #4ade80; }
+.ev-pts.neg { color: #f87171; }
+.ev-undo {
+  background: none; border: 1px solid rgba(239,68,68,0.2);
+  color: rgba(239,68,68,0.5);
+  border-radius: 8px; padding: 4px 8px;
+  font-size: 0.65rem; cursor: pointer; flex-shrink: 0;
+  transition: all 0.2s;
+}
+.ev-undo:hover { border-color: #ef4444; color: #ef4444; background: rgba(239,68,68,0.08); }
+
+.empty-state { text-align: center; color: var(--muted); padding: 60px 20px; font-size: 0.9rem; }
+
+/* ─── FEED VIEW ─── */
+.feed-section { padding-top: 40px; }
+.feed-list { display: flex; flex-direction: column; gap: 8px; }
+.feed-ev {
+  background: rgba(255,255,255,0.025);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 20px;
+  display: flex; align-items: center; gap: 16px;
+}
+.feed-ev.f-pos { border-left: 3px solid #22c55e; }
+.feed-ev.f-neg { border-left: 3px solid #ef4444; }
+.feed-ev.f-sabo { border-left: 3px solid #f97316; }
+.feed-team { font-size: 1.2rem; flex-shrink: 0; }
+.feed-content { flex: 1; }
+.feed-name { font-weight: 700; font-size: 0.9rem; }
+.feed-note { color: var(--muted); font-size: 0.78rem; margin-top: 2px; }
+.feed-time { color: var(--muted); font-size: 0.7rem; margin-top: 2px; }
+.feed-pts { font-family: 'Orbitron', monospace; font-size: 1.1rem; font-weight: 900; flex-shrink: 0; }
+.feed-pts.pos { color: #4ade80; }
+.feed-pts.neg { color: #f87171; }
+.feed-undo {
+  background: none; border: 1px solid rgba(239,68,68,0.2);
+  color: rgba(239,68,68,0.5);
+  border-radius: 8px; padding: 5px 10px;
+  font-size: 0.65rem; cursor: pointer;
+  transition: all 0.2s;
+}
+.feed-undo:hover { border-color: #ef4444; color: #ef4444; background: rgba(239,68,68,0.08); }
+
+/* ─── BOTTOM TICKER ─── */
+.ticker-bar {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
+  background: rgba(5,5,15,0.92);
+  border-top: 1px solid var(--border);
+  backdrop-filter: blur(12px);
+  padding: 10px 0;
+  overflow: hidden;
+}
+.ticker-inner {
+  display: flex;
+  white-space: nowrap;
+  animation: ticker-scroll 35s linear infinite;
+}
+@keyframes ticker-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.ticker-item {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 0 32px;
+  font-size: 0.78rem;
+  color: var(--muted);
+  border-right: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.ticker-item .ti-rank { font-family: 'Orbitron', monospace; font-size: 0.55rem; font-weight: 900; }
+.ticker-item .ti-name { font-weight: 600; color: var(--text); }
+.ticker-item .ti-pts { font-family: 'Orbitron', monospace; font-weight: 700; }
+
+/* ─── SCREEN FLASH ─── */
+.screen-flash {
+  position: fixed; inset: 0; z-index: 999; pointer-events: none;
+  border: 0px solid transparent;
+  transition: none;
+}
+.screen-flash.flash-pos { animation: fpos 0.8s ease; }
+.screen-flash.flash-neg { animation: fneg 0.8s ease; }
+@keyframes fpos { 0%,100%{box-shadow:none} 30%{box-shadow:inset 0 0 60px rgba(34,197,94,0.25)} }
+@keyframes fneg { 0%,100%{box-shadow:none} 30%{box-shadow:inset 0 0 60px rgba(239,68,68,0.25)} }
+
+/* ─── TOAST ─── */
+.toast {
+  position: fixed; bottom: 60px; left: 50%;
+  transform: translateX(-50%) translateY(120px);
+  background: #22c55e; color: #fff;
+  padding: 12px 24px; border-radius: 12px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700; font-size: 0.88rem;
+  z-index: 999; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+.toast.err { background: #ef4444; }
+
+/* ─── SETTINGS MODAL ─── */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 300;
+  background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity 0.25s;
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+.modal {
+  background: #0e0e24;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 24px;
+  padding: 36px;
+  width: 100%; max-width: 600px;
+  max-height: 85vh;
+  overflow-y: auto;
+  transform: scale(0.95); transition: transform 0.25s;
+}
+.modal-overlay.open .modal { transform: scale(1); }
+.modal-title { font-family: 'Bangers', cursive; font-size: 2rem; letter-spacing: 2px; margin-bottom: 24px; }
+.modal-close { float: right; background: none; border: none; color: var(--muted); font-size: 1.4rem; cursor: pointer; }
+.settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+.team-edit-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+}
+.tec-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.tec-emoji-input {
+  width: 52px;
+  background: rgba(0,0,0,0.4);
+  border: 1.5px solid var(--border);
+  color: var(--text);
+  padding: 8px;
+  border-radius: 10px;
+  font-size: 1.2rem;
+  text-align: center;
+  outline: none;
+  font-family: 'Space Grotesk', sans-serif;
+}
+.tec-name-input {
+  flex: 1;
+  background: rgba(0,0,0,0.4);
+  border: 1.5px solid var(--border);
+  color: var(--text);
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  outline: none;
+  font-family: 'Space Grotesk', sans-serif;
+}
+.tec-name-input:focus, .tec-emoji-input:focus { border-color: #F59E0B; }
+.tec-color { width: 100%; height: 34px; border-radius: 8px; border: 1px solid var(--border); cursor: pointer; margin-bottom: 10px; }
+.tec-save {
+  width: 100%; padding: 9px;
+  background: rgba(245,158,11,0.15);
+  border: 1px solid rgba(245,158,11,0.3);
+  color: #F59E0B;
+  border-radius: 10px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.8rem; font-weight: 700;
+  cursor: pointer; transition: all 0.2s;
+}
+.tec-save:hover { background: rgba(245,158,11,0.25); }
+
+.pw-change-section {
+  border-top: 1px solid var(--border);
+  padding-top: 20px;
+  margin-top: 4px;
+}
+.pw-change-section label { font-size: 0.65rem; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 8px; }
+.pw-change-section input {
+  width: 100%;
+  background: rgba(0,0,0,0.4);
+  border: 1.5px solid var(--border);
+  color: var(--text);
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.9rem;
+  outline: none;
+  margin-bottom: 10px;
+}
+.pw-change-section input:focus { border-color: #F59E0B; }
+.btn-save-pw {
+  padding: 12px 24px;
+  background: linear-gradient(135deg,#F59E0B,#F97316);
+  border: none; border-radius: 12px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.85rem; font-weight: 700;
+  color: #000; cursor: pointer;
+}
+
+/* ─── SECTION VISIBILITY ─── */
+.view { display: none; }
+.view.active { display: block; }
+</style>
+</head>
+<body>
+
+<!-- BG Canvas -->
+<canvas id="bg"></canvas>
+
+<!-- Screen flash -->
+<div class="screen-flash" id="screenFlash"></div>
+
+<!-- ─── PASSWORD GATE ─── -->
+<div class="pw-gate" id="pwGate">
+  <div class="pw-inner">
+    <div class="pw-icon">🍌</div>
+    <div class="pw-title">OPERATION<br>inCISive</div>
+    <div class="pw-sub">Multiverse of Minions · OC Access</div>
+    <div class="pw-field">
+      <input type="password" id="pwInput" placeholder="Enter passphrase" onkeydown="if(event.key==='Enter')checkPw()" />
+    </div>
+    <button class="pw-btn" onclick="checkPw()">ENGAGE 🚀</button>
+    <div class="pw-error" id="pwError"></div>
+  </div>
+</div>
+
+<!-- ─── TOP BAR ─── -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="logo">OPERATION inCISive</div>
+    <div class="live-indicator">
+      <div class="live-dot" id="liveDot"></div>
+      <span id="liveLabel">Live</span>
+    </div>
+  </div>
+  <div class="topbar-center">
+    <button class="day-tab active" data-d="0" onclick="setDayFilter(0)">All Days</button>
+    <button class="day-tab" data-d="1" onclick="setDayFilter(1)">Day 1</button>
+    <button class="day-tab" data-d="2" onclick="setDayFilter(2)">Day 2</button>
+  </div>
+  <div class="topbar-right">
+    <button class="nav-btn active" id="btnWall" onclick="showView('wall')">🧗 Wall</button>
+    <button class="nav-btn" id="btnFeed" onclick="showView('feed')">📋 Events</button>
+    <button class="nav-btn" onclick="openSettings()">⚙️</button>
+  </div>
+</div>
+
+<!-- ─── MAIN ─── -->
+<div class="main" id="mainContent">
+
+  <!-- WALL VIEW -->
+  <div class="view active" id="viewWall">
+    <div class="wall-section">
+      <div class="wall-eyebrow">Live Standings · Multiverse Rankings</div>
+      <div class="wall-heading" id="wallHeading">CLIMBING<br>THE WALL</div>
+
+      <div style="position:relative; padding-left:48px;">
+        <div class="wall-yaxis" id="wallYaxis"></div>
+        <div class="wall-container" id="wallContainer"></div>
+      </div>
+    </div>
+
+    <div class="rankings-section">
+      <div class="section-eyebrow">Full Leaderboard</div>
+      <div class="ranking-list" id="rankingList"></div>
+    </div>
+  </div>
+
+  <!-- FEED VIEW -->
+  <div class="view" id="viewFeed">
+    <div class="feed-section">
+      <div class="section-eyebrow">All Point Events</div>
+      <div class="feed-list" id="feedList"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ─── TEAM DETAIL PANEL ─── -->
+<div class="detail-overlay" id="detailOverlay" onclick="closeDetail(event)">
+  <div class="detail-panel" id="detailPanel">
+    <div class="detail-hero" id="detailHero">
+      <button class="detail-close" onclick="closeDetailBtn()">✕</button>
+      <div class="detail-emoji" id="dEmoji"></div>
+      <div class="detail-universe" id="dName"></div>
+      <div class="detail-pts" id="dPts"></div>
+      <div class="detail-rank-badge" id="dRank"></div>
+    </div>
+    <div class="detail-body">
+      <div class="detail-section-title">Point History</div>
+      <div id="detailEvents"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── SETTINGS MODAL ─── -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeSettings()">✕</button>
+    <div class="modal-title">⚙️ Settings</div>
+    <div class="settings-grid" id="settingsGrid"></div>
+    <div class="pw-change-section">
+      <label>Change OC Password</label>
+      <input type="password" id="pwOld" placeholder="Current password" />
+      <input type="password" id="pwNew" placeholder="New password" />
+      <button class="btn-save-pw" onclick="changePassword()">Update Password</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── TICKER ─── -->
+<div class="ticker-bar">
+  <div class="ticker-inner" id="tickerInner"></div>
+</div>
+
+<!-- ─── TOAST ─── -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── State ──────────────────────────────────────────────────
+let teams = [], allEvents = [];
+let dayFilter = 0; // 0 = all
+let activeView = 'wall';
+let prevPts = {};
+let authed = false;
+
+// ── Background canvas ──────────────────────────────────────
+(function() {
+  const c = document.getElementById('bg');
+  const ctx = c.getContext('2d');
+  let W, H, particles = [];
+  function resize() { W = c.width = innerWidth; H = c.height = innerHeight; }
+  function mkP() {
+    return {
+      x: Math.random()*W, y: Math.random()*H,
+      vx: (Math.random()-0.5)*0.15, vy: (Math.random()-0.5)*0.15,
+      r: Math.random()*1.5+0.3,
+      a: Math.random()*0.6+0.1, c: Math.random()<0.3?'200,180,255':'200,210,255'
+    };
+  }
+  function init() { resize(); particles = Array.from({length:150}, mkP); }
+  function draw() {
+    ctx.clearRect(0,0,W,H);
+    for (const p of particles) {
+      p.x = (p.x+p.vx+W)%W; p.y = (p.y+p.vy+H)%H;
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fillStyle = `rgba(${p.c},${p.a})`; ctx.fill();
+    }
+    requestAnimationFrame(draw);
+  }
+  window.addEventListener('resize', resize);
+  init(); draw();
+})();
+
+// ── Auth ────────────────────────────────────────────────────
+async function checkPw() {
+  const pw = document.getElementById('pwInput').value;
+  const res = await fetch('/api/auth', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({password: pw})
+  });
+  if (res.ok) {
+    authed = true;
+    sessionStorage.setItem('oc_auth', pw);
+    document.getElementById('pwGate').classList.add('hidden');
+    init();
+  } else {
+    const inp = document.getElementById('pwInput');
+    document.getElementById('pwError').textContent = '❌ Wrong passphrase. Try again.';
+    inp.classList.add('shake');
+    setTimeout(() => { inp.classList.remove('shake'); inp.value=''; }, 500);
+  }
+}
+
+// Auto-auth from session
+(function() {
+  const saved = sessionStorage.getItem('oc_auth');
+  if (saved) {
+    fetch('/api/auth', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({password: saved})
+    }).then(r => {
+      if (r.ok) {
+        authed = true;
+        document.getElementById('pwGate').classList.add('hidden');
+        init();
+      }
+    });
+  }
+})();
+
+// ── Data loading ────────────────────────────────────────────
+async function loadAll() {
+  const dayParam = dayFilter ? `?day=${dayFilter}` : '';
+  const eventParam = dayFilter ? `?day=${dayFilter}` : '';
+  [teams, allEvents] = await Promise.all([
+    fetch('/api/teams-live' + dayParam).then(r=>r.json()),
+    fetch('/api/events' + eventParam).then(r=>r.json()),
+  ]);
+  teams.forEach(t => { if(!(t.id in prevPts)) prevPts[t.id]=t.total_points; });
+}
+
+async function init() {
+  await loadAll();
+  teams.forEach(t => prevPts[t.id]=t.total_points);
+  render();
+  connectWS();
+}
+
+function render() {
+  renderWall();
+  renderRankingList();
+  renderFeed();
+  renderTicker();
+}
+
+// ── Wall visualization ────────────────────────────────────
+function renderWall() {
+  const sorted = [...teams].sort((a,b)=>b.total_points-a.total_points);
+  const maxPts = Math.max(1, ...sorted.map(t=>Math.abs(t.total_points)));
+
+  // Y axis
+  const yaxis = document.getElementById('wallYaxis');
+  const steps = [0, 0.25, 0.5, 0.75, 1.0];
+  yaxis.innerHTML = steps.map(f => `<div class="wall-ylabel">${Math.round(f*maxPts)}</div>`).join('');
+
+  const container = document.getElementById('wallContainer');
+  // Preserve existing bubbles for smooth transitions
+  const existingCols = {};
+  container.querySelectorAll('.wall-col').forEach(el => {
+    existingCols[el.dataset.teamId] = el;
+  });
+
+  // Sort display by original team order (left to right = team1..team7)
+  const displayOrder = [...teams].sort((a,b)=>a.id.localeCompare(b.id));
+  container.innerHTML = '';
+  for (const t of displayOrder) {
+    const rank = sorted.findIndex(x=>x.id===t.id)+1;
+    const pct = maxPts > 0 ? (t.total_points / maxPts) : 0;
+    const bottomPct = Math.max(0, Math.min(90, pct * 85)) + 2;
+    const isTop = rank === 1;
+
+    const col = document.createElement('div');
+    col.className = 'wall-col';
+    col.dataset.teamId = t.id;
+    col.innerHTML = `
+      <div class="wall-col-floor" style="--team-color:${t.color}"></div>
+      <div class="wall-bubble-track">
+        <div class="wall-bubble" id="bubble-${t.id}" style="bottom:${bottomPct}%" onclick="openDetail('${t.id}')">
+          <div class="bubble-rank">#${rank}</div>
+          <div class="bubble-card ${isTop?'rank1':''}" style="--team-color:${t.color}">
+            <div class="bubble-emoji">${t.emoji}</div>
+            <div class="bubble-pts">${t.total_points}</div>
+          </div>
+          <div class="bubble-name">${t.name.replace('-verse','')}</div>
+        </div>
+      </div>
+    `;
+    container.appendChild(col);
+  }
+}
+
+// ── Ranking list ──────────────────────────────────────────
+function renderRankingList() {
+  const sorted = [...teams].sort((a,b)=>b.total_points-a.total_points);
+  const max = Math.max(1, sorted[0]?.total_points||1);
+  const list = document.getElementById('rankingList');
+  list.innerHTML = sorted.map((t,i) => {
+    const rank = i+1;
+    const pct = Math.max(0, t.total_points/max*100);
+    const delta = t.total_points - (prevPts[t.id]??t.total_points);
+    return `
+    <div class="rank-card" style="--team-color:${t.color}" onclick="openDetail('${t.id}')">
+      <div class="rc-rank${rank<=3?' top':''}">
+        ${rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':rank}
+      </div>
+      <div class="rc-emoji">${t.emoji}</div>
+      <div class="rc-info">
+        <div class="rc-name">${t.name}</div>
+        <div class="rc-sub">Click to view history</div>
+      </div>
+      <div class="rc-bar-wrap">
+        <div class="rc-bar" style="width:${Math.max(1,pct)}%"></div>
+      </div>
+      <div class="rc-pts">
+        <div class="rc-pts-val">${t.total_points}</div>
+        <div class="rc-pts-delta${delta!==0?' show':''}" id="rdelta-${t.id}">
+          ${delta>0?'+':''}${delta!==0?delta+' pts':''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Feed ──────────────────────────────────────────────────
+function renderFeed() {
+  const list = document.getElementById('feedList');
+  if (!allEvents.length) {
+    list.innerHTML = '<div class="empty-state">🍌 No events yet.<br>Game masters haven\'t submitted any points.</div>';
+    return;
+  }
+  list.innerHTML = allEvents.map(e => feedEvHTML(e)).join('');
+}
+
+function feedEvHTML(e) {
+  const isSabo = e.event_type==='sabotage';
+  const pts = e.points1;
+  const cls = isSabo?'f-sabo':pts>=0?'f-pos':'f-neg';
+  const sign = pts>0?'+':''; const pcls = pts>=0?'pos':'neg';
+  const time = fmtTime(e.timestamp);
+  const note = e.note || (isSabo ? `${e.team1_emoji} ${e.team1_name} → ${e.team2_emoji} ${e.team2_name}` : '');
+  return `
+  <div class="feed-ev ${cls}">
+    <div class="feed-team">${e.team1_emoji}</div>
+    <div class="feed-content">
+      <div class="feed-name">${e.game_name} · <span style="color:${e.team1_color||'#888'}">${e.team1_name}</span></div>
+      ${note?`<div class="feed-note">${note}</div>`:''}
+      <div class="feed-time">${time} · Day ${e.day||1}</div>
+    </div>
+    <div class="feed-pts ${pcls}">${sign}${pts}</div>
+    <button class="feed-undo" onclick="undoEvent('${e.id}',event)" title="Undo">↩</button>
+  </div>`;
+}
+
+// ── Detail panel ──────────────────────────────────────────
+async function openDetail(teamId) {
+  const t = teams.find(x=>x.id===teamId);
+  const rank = [...teams].sort((a,b)=>b.total_points-a.total_points).findIndex(x=>x.id===teamId)+1;
+  const suffix = rank===1?'st':rank===2?'nd':rank===3?'rd':'th';
+
+  document.getElementById('dEmoji').textContent = t.emoji;
+  document.getElementById('dName').textContent = t.name;
+  document.getElementById('dPts').textContent = t.total_points + ' pts';
+  document.getElementById('dRank').textContent = `#${rank}${suffix} place`;
+
+  const hero = document.getElementById('detailHero');
+  hero.style.setProperty('--hero-color', `color-mix(in srgb, ${t.color} 20%, transparent)`);
+  hero.style.setProperty('--hero-color-solid', t.color);
+
+  // Load events for this team
+  const dayParam = dayFilter ? `&day=${dayFilter}` : '';
+  const events = await fetch(`/api/events?team_id=${teamId}${dayParam}`).then(r=>r.json());
+  const evContainer = document.getElementById('detailEvents');
+  if (!events.length) {
+    evContainer.innerHTML = '<div class="empty-state">No events yet for this universe.</div>';
+  } else {
+    evContainer.innerHTML = events.map(e => detailEvHTML(e, teamId)).join('');
+  }
+
+  document.getElementById('detailOverlay').classList.add('open');
+}
+
+function detailEvHTML(e, focusTeamId) {
+  const isSabo = e.event_type==='sabotage';
+  let pts = focusTeamId===e.team2_id ? e.points2 : e.points1;
+  const cls = isSabo?'ev-sabo':pts>=0?'ev-pos':'ev-neg';
+  const sign = pts>0?'+':''; const pcls = pts>=0?'pos':'neg';
+  const icon = isSabo?'🔥':pts>=0?'⬆️':'⬇️';
+  const note = e.note || (isSabo?`${e.team1_emoji} ${e.team1_name} → ${e.team2_emoji} ${e.team2_name}`:'');
+  const time = fmtTime(e.timestamp);
+  return `
+  <div class="ev-item ${cls}">
+    <div class="ev-icon">${icon}</div>
+    <div class="ev-content">
+      <div class="ev-name">${e.game_name}</div>
+      ${note?`<div class="ev-note">${note}</div>`:''}
+      <div class="ev-time">${time} · Day ${e.day||1}</div>
+    </div>
+    <div class="ev-pts ${pcls}">${sign}${pts}</div>
+    <button class="ev-undo" onclick="undoEvent('${e.id}',event)" title="Undo this">↩</button>
+  </div>`;
+}
+
+function closeDetail(e) {
+  if (e.target === document.getElementById('detailOverlay')) closeDetailBtn();
+}
+function closeDetailBtn() {
+  document.getElementById('detailOverlay').classList.remove('open');
+}
+
+// ── Undo ──────────────────────────────────────────────────
+async function undoEvent(eventId, e) {
+  e.stopPropagation();
+  if (!confirm('Undo this point event?')) return;
+  const res = await fetch(`/api/events/${eventId}`, {method:'DELETE'});
+  if (res.ok) {
+    toast('Event undone ↩');
+    await loadAll();
+    render();
+  } else { toast('Failed to undo', true); }
+}
+
+// ── Ticker ────────────────────────────────────────────────
+function renderTicker() {
+  const sorted = [...teams].sort((a,b)=>b.total_points-a.total_points);
+  const html = sorted.map((t,i)=>`
+    <div class="ticker-item">
+      <span class="ti-rank">#${i+1}</span>
+      <span>${t.emoji}</span>
+      <span class="ti-name">${t.name}</span>
+      <span class="ti-pts" style="color:${t.color}">${t.total_points} pts</span>
+    </div>
+  `).join('');
+  // Duplicate for seamless loop
+  document.getElementById('tickerInner').innerHTML = html + html;
+}
+
+// ── View switching ────────────────────────────────────────
+function showView(v) {
+  activeView = v;
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  document.getElementById('viewWall').classList.toggle('active', v==='wall');
+  document.getElementById('viewFeed').classList.toggle('active', v==='feed');
+  document.getElementById('btnWall').classList.toggle('active', v==='wall');
+  document.getElementById('btnFeed').classList.toggle('active', v==='feed');
+}
+
+// ── Day filter ────────────────────────────────────────────
+function setDayFilter(d) {
+  dayFilter = d;
+  document.querySelectorAll('.day-tab').forEach(el=>el.classList.toggle('active',+el.dataset.d===d));
+  const labels = {0:'CLIMBING THE WALL',1:'DAY 1 — FIX THE PORTAL',2:'DAY 2 — FIND GRU'};
+  document.getElementById('wallHeading').innerHTML = (labels[d]||'').replace(' — ','<br>');
+  loadAll().then(()=>{
+    render();
+  });
+}
+
+// ── Settings ──────────────────────────────────────────────
+function openSettings() { document.getElementById('settingsModal').classList.add('open'); renderSettingsGrid(); }
+function closeSettings() { document.getElementById('settingsModal').classList.remove('open'); }
+
+function renderSettingsGrid() {
+  const grid = document.getElementById('settingsGrid');
+  grid.innerHTML = teams.map(t=>`
+    <div class="team-edit-card">
+      <div class="tec-header">
+        <input class="tec-emoji-input" id="se-emoji-${t.id}" value="${t.emoji}" maxlength="2"/>
+        <input class="tec-name-input" id="se-name-${t.id}" value="${t.name}"/>
+      </div>
+      <input type="color" class="tec-color" id="se-color-${t.id}" value="${t.color}"/>
+      <button class="tec-save" onclick="saveTeam('${t.id}')">Save</button>
+    </div>
+  `).join('');
+}
+
+async function saveTeam(id) {
+  await fetch(`/api/teams/${id}`,{
+    method:'PATCH',headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      name: document.getElementById(`se-name-${id}`).value,
+      emoji: document.getElementById(`se-emoji-${id}`).value,
+      color: document.getElementById(`se-color-${id}`).value,
+    })
+  });
+  await loadAll();
+  render();
+  toast('Team saved!');
+}
+
+async function changePassword() {
+  const old_pw = document.getElementById('pwOld').value;
+  const new_pw = document.getElementById('pwNew').value;
+  if (!new_pw) { toast('Enter a new password', true); return; }
+  const res = await fetch('/api/settings',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({current_password: old_pw, password: new_pw})
+  });
+  if (res.ok) {
+    sessionStorage.setItem('oc_auth', new_pw);
+    toast('Password updated!');
+    document.getElementById('pwOld').value='';
+    document.getElementById('pwNew').value='';
+  } else { toast('Wrong current password', true); }
+}
+
+// ── WebSocket ─────────────────────────────────────────────
+let ws;
+function connectWS() {
+  const proto = location.protocol==='https:'?'wss':'ws';
+  ws = new WebSocket(`${proto}://${location.host}/ws`);
+  ws.onopen = () => {
+    document.getElementById('liveDot').style.background='#22c55e';
+    document.getElementById('liveLabel').textContent='Live';
+  };
+  ws.onclose = () => {
+    document.getElementById('liveDot').style.background='#ef4444';
+    document.getElementById('liveLabel').textContent='Reconnecting…';
+    setTimeout(connectWS, 2500);
+  };
+  ws.onmessage = async msg => {
+    const data = JSON.parse(msg.data);
+    if (data.type==='update') {
+      // Save prev pts for deltas
+      const oldPts = {};
+      teams.forEach(t=>oldPts[t.id]=t.total_points);
+
+      await loadAll();
+
+      // Show deltas
+      teams.forEach(t => {
+        const diff = t.total_points - (oldPts[t.id]??t.total_points);
+        prevPts[t.id] = oldPts[t.id]??t.total_points;
+        if (diff!==0) {
+          setTimeout(()=>{
+            const el = document.getElementById(`rdelta-${t.id}`);
+            if (el) {
+              el.textContent = (diff>0?'+':'')+diff+' pts';
+              el.classList.add('show');
+              setTimeout(()=>el.classList.remove('show'),3500);
+            }
+          },600);
+        }
+      });
+
+      render();
+
+      // Flash + audio cue
+      if (data.latest_event) {
+        const pts = data.latest_event.points1;
+        flashScreen(pts>=0?'pos':'neg');
+        playChime(pts>=0);
+      }
+    }
+  };
+}
+
+function flashScreen(cls) {
+  const el = document.getElementById('screenFlash');
+  el.className = 'screen-flash flash-'+cls;
+  setTimeout(()=>el.className='screen-flash',900);
+}
+
+function playChime(positive) {
+  try {
+    const ctx = new AudioContext();
+    const notes = positive ? [523,659,784] : [392,330,261];
+    let t = ctx.currentTime;
+    notes.forEach(f=>{
+      const o=ctx.createOscillator(), g=ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.type='sine'; o.frequency.value=f;
+      g.gain.setValueAtTime(0.15,t);
+      g.gain.exponentialRampToValueAtTime(0.001,t+0.35);
+      o.start(t); o.stop(t+0.35);
+      t+=0.2;
+    });
+  } catch(e){}
+}
+
+// ── Utils ─────────────────────────────────────────────────
+function fmtTime(iso) {
+  return new Date(iso).toLocaleString('en-SG',{dateStyle:'short',timeStyle:'short'});
+}
+function toast(msg, err) {
+  const el = document.getElementById('toast');
+  el.textContent=msg;
+  el.className='toast'+(err?' err':'')+' show';
+  setTimeout(()=>el.className='toast'+(err?' err':''),2800);
+}
+</script>
+</body>
+</html>
