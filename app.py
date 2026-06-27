@@ -31,7 +31,11 @@ def init_db():
             id TEXT PRIMARY KEY,
             name TEXT NOT NULL,
             team_count INTEGER NOT NULL,
-            category TEXT NOT NULL
+            category TEXT NOT NULL,
+            day_tag INTEGER DEFAULT 0,
+            location TEXT DEFAULT '',
+            ui_type TEXT DEFAULT 'standard_1',
+            config TEXT DEFAULT '{}'
         );
         CREATE TABLE IF NOT EXISTS events (
             id TEXT PRIMARY KEY,
@@ -51,17 +55,24 @@ def init_db():
             value TEXT NOT NULL
         );
         ''')
-        # Migrate: add day column if missing
-        try:
-            conn.execute('ALTER TABLE events ADD COLUMN day INTEGER NOT NULL DEFAULT 1')
-        except Exception:
-            pass
+        # Migrate: add missing columns
+        migrations = [
+            ('events', 'day', 'INTEGER NOT NULL DEFAULT 1'),
+            ('games', 'day_tag', 'INTEGER DEFAULT 0'),
+            ('games', 'location', "TEXT DEFAULT ''"),
+            ('games', 'ui_type', "TEXT DEFAULT 'standard_1'"),
+            ('games', 'config', "TEXT DEFAULT '{}'"),
+        ]
+        for table, col, typedef in migrations:
+            try:
+                conn.execute(f'ALTER TABLE {table} ADD COLUMN {col} {typedef}')
+            except Exception:
+                pass
+
         # Default settings
         conn.execute("INSERT OR IGNORE INTO settings VALUES ('password', 'minion2026')")
-        conn.execute("INSERT OR IGNORE INTO settings VALUES ('sabotage_win', '50')")
-        conn.execute("INSERT OR IGNORE INTO settings VALUES ('sabotage_lose', '-50')")
 
-        # Seed / update teams
+        # Update team names/colours to universes
         universes = [
             ('team1', 'Mystery-verse', '#F59E0B', '💛'),
             ('team2', 'Sky-verse',     '#38BDF8', '🩵'),
@@ -74,26 +85,40 @@ def init_db():
         for tid, name, color, emoji in universes:
             exists = conn.execute('SELECT id FROM teams WHERE id=?', (tid,)).fetchone()
             if exists:
-                conn.execute('UPDATE teams SET name=?, color=?, emoji=? WHERE id=?', (name, color, emoji, tid))
+                conn.execute('UPDATE teams SET name=?,color=?,emoji=? WHERE id=?', (name,color,emoji,tid))
             else:
-                conn.execute('INSERT INTO teams VALUES (?,?,?,?,0)', (tid, name, color, emoji))
+                conn.execute('INSERT INTO teams VALUES (?,?,?,?,0)', (tid,name,color,emoji))
 
-        # Seed games if empty
-        if conn.execute('SELECT COUNT(*) FROM games').fetchone()[0] == 0:
-            games = [
-                (str(uuid.uuid4()), 'Amazing Race',    2, 'game'),
-                (str(uuid.uuid4()), 'Quiz Bee',        1, 'game'),
-                (str(uuid.uuid4()), 'Tug of War',      2, 'game'),
-                (str(uuid.uuid4()), 'Scavenger Hunt',  1, 'game'),
-                (str(uuid.uuid4()), 'Relay Race',      2, 'game'),
-                (str(uuid.uuid4()), 'Trivia Night',    1, 'game'),
-                (str(uuid.uuid4()), 'Obstacle Course', 1, 'game'),
-                (str(uuid.uuid4()), 'Penalty',         1, 'misc'),
-                (str(uuid.uuid4()), 'Wild Card',       1, 'misc'),
-                (str(uuid.uuid4()), 'Bonus Points',    1, 'misc'),
-                (str(uuid.uuid4()), 'Sabotage',        2, 'sabotage'),
-            ]
-            conn.executemany('INSERT INTO games VALUES (?,?,?,?)', games)
+        # Re-seed games (always refresh from source of truth)
+        conn.execute('DELETE FROM games')
+        games = [
+            # Day 1 — Vivo Rooftop (dry weather)
+            ('g_spot',    'Spot the Difference',    2, 'game', 1, 'Vivo Rooftop',   'win_lose_2',   '{"win":150,"lose":50}'),
+            ('g_jigsaw',  'Jigsaw Puzzle',           2, 'game', 1, 'Vivo Rooftop',   'win_lose_2',   '{"win":150,"lose":50}'),
+            ('g_song',    'Guess the Song',          2, 'game', 1, 'Vivo Rooftop',   'win_lose_2',   '{"win":150,"lose":50}'),
+            ('g_mrt',     'MRT Line Game',           1, 'game', 1, 'Vivo Rooftop',   'preset_1',     '{"presets":[400,300,200,100],"labels":["1st","2nd","3rd","4th"]}'),
+            # Day 1 — Sensory Scape (wet weather)
+            ('g_wet',     'Wet Weather Game',        1, 'game', 1, 'Sensory Scape',  'preset_1',     '{"presets":[100,50],"labels":["1st","2nd"]}'),
+            # Day 1 — Beach Games
+            ('g_captball','Captain\'s Ball',         2, 'game', 1, 'Beach',          'captains_ball','{"win":250}'),
+            ('g_splash',  'Splash Ball Race',        2, 'game', 1, 'Beach',          'splash_ball',  '{"rounds":3,"win_per_round":250}'),
+            ('g_bandana', 'Bandana Pull',            2, 'game', 1, 'Beach',          'win_lose_2',   '{"win":250,"lose":0}'),
+            ('g_charades','Handicap Charades',       1, 'game', 1, 'Beach',          'multiplier_1', '{"multiplier":20}'),
+            ('g_relay',   'Relay Race',              7, 'game', 1, 'Beach',          'relay',        '{"places":[400,300,200,100]}'),
+            # Day 2 — School Games
+            ('g_police',  'Police Sketch Pictionary',2, 'game', 2, 'School',         'standard_2',   '{}'),
+            ('g_back',    "Don't Show Your Back",    2, 'game', 2, 'School',         'standard_2',   '{}'),
+            ('g_movie',   'Movie Jeopardy',          2, 'game', 2, 'School',         'standard_2',   '{}'),
+            ('g_coney',   'Coney',                   1, 'game', 2, 'School',         'standard_1',   '{}'),
+            # Day 2 — Scavenger Hunt
+            ('g_scav',    'Scavenger Hunt',          7, 'game', 2, 'Scavenger Hunt', 'scavenger',    '{"tiers":[20,50,100,200,500]}'),
+            # Misc
+            ('g_penalty', 'Penalty',                 1, 'misc', 0, '',               'standard_1',   '{}'),
+            ('g_wild',    'Wild Card',               1, 'misc', 0, '',               'standard_1',   '{}'),
+            ('g_bonus',   'Bonus Points',            1, 'misc', 0, '',               'standard_1',   '{}'),
+            ('g_sabotage','Sabotage',                2, 'sabotage', 0, '',           'sabotage',     '{"win":50,"lose":-50}'),
+        ]
+        conn.executemany('INSERT INTO games VALUES (?,?,?,?,?,?,?,?)', games)
 
 def broadcast(data):
     dead = set()
@@ -104,16 +129,28 @@ def broadcast(data):
             dead.add(ws)
     clients.difference_update(dead)
 
-def recalc_totals(conn, day=None):
+def recalc_totals(conn):
     conn.execute('UPDATE teams SET total_points = 0')
-    clause = 'WHERE day=?' if day else ''
-    params = (day,) if day else ()
-    rows = conn.execute(f'SELECT team1_id, SUM(points1) as p FROM events {clause} GROUP BY team1_id', params).fetchall()
+    rows = conn.execute('SELECT team1_id, SUM(points1) as p FROM events GROUP BY team1_id').fetchall()
     for r in rows:
         conn.execute('UPDATE teams SET total_points = total_points + ? WHERE id = ?', (r['p'], r['team1_id']))
-    rows = conn.execute(f'SELECT team2_id, SUM(points2) as p FROM events {clause} WHERE team2_id IS NOT NULL GROUP BY team2_id', params).fetchall()
+    rows = conn.execute('SELECT team2_id, SUM(points2) as p FROM events WHERE team2_id IS NOT NULL GROUP BY team2_id').fetchall()
     for r in rows:
         conn.execute('UPDATE teams SET total_points = total_points + ? WHERE id = ?', (r['p'], r['team2_id']))
+
+def get_teams_data(conn, day=None):
+    teams = conn.execute('SELECT id, name, color, emoji FROM teams').fetchall()
+    result = []
+    for t in teams:
+        tid = t['id']
+        clause = 'AND day=?' if day else ''
+        p1 = conn.execute(f'SELECT COALESCE(SUM(points1),0) as p FROM events WHERE team1_id=? {clause}',
+                          (tid, day) if day else (tid,)).fetchone()['p']
+        p2 = conn.execute(f'SELECT COALESCE(SUM(points2),0) as p FROM events WHERE team2_id=? {clause}',
+                          (tid, day) if day else (tid,)).fetchone()['p']
+        result.append({**dict(t), 'total_points': p1 + p2})
+    result.sort(key=lambda x: x['total_points'], reverse=True)
+    return result
 
 def get_setting(conn, key):
     row = conn.execute('SELECT value FROM settings WHERE key=?', (key,)).fetchone()
@@ -138,7 +175,6 @@ def index():
 def gamemaster():
     return send_from_directory('static', 'gamemaster.html')
 
-# Auth
 @app.route('/api/auth', methods=['POST'])
 def auth():
     data = request.json
@@ -146,10 +182,10 @@ def auth():
         pw = get_setting(conn, 'password')
     if data.get('password') == pw:
         return jsonify({'ok': True})
-    return jsonify({'ok': False, 'error': 'Wrong password'}), 401
+    return jsonify({'ok': False}), 401
 
 @app.route('/api/settings', methods=['GET'])
-def get_settings():
+def get_settings_api():
     with get_db() as conn:
         rows = conn.execute("SELECT key, value FROM settings WHERE key != 'password'").fetchall()
         return jsonify({r['key']: r['value'] for r in rows})
@@ -157,11 +193,10 @@ def get_settings():
 @app.route('/api/settings', methods=['POST'])
 def update_settings():
     data = request.json
-    current_pw = data.get('current_password')
     with get_db() as conn:
         pw = get_setting(conn, 'password')
-        if current_pw != pw:
-            return jsonify({'ok': False, 'error': 'Wrong password'}), 401
+        if data.get('current_password') != pw:
+            return jsonify({'ok': False}), 401
         for key, value in data.items():
             if key == 'current_password':
                 continue
@@ -172,38 +207,12 @@ def update_settings():
 def get_teams():
     day = request.args.get('day', type=int)
     with get_db() as conn:
-        if day:
-            recalc_totals(conn, day)
-            conn.commit()
-        rows = conn.execute('SELECT * FROM teams ORDER BY total_points DESC').fetchall()
-        # Restore all-time totals after temp recalc
-        if day:
-            recalc_totals(conn)
-            conn.commit()
-        return jsonify([dict(r) for r in rows])
-
-@app.route('/api/teams-live')
-def get_teams_live():
-    """Returns live standings for given day filter without side effects."""
-    day = request.args.get('day', type=int)
-    with get_db() as conn:
-        teams = conn.execute('SELECT id, name, color, emoji FROM teams').fetchall()
-        result = []
-        for t in teams:
-            tid = t['id']
-            clause = 'AND day=?' if day else ''
-            params1 = (tid, day) if day else (tid,)
-            params2 = (tid, day) if day else (tid,)
-            p1 = conn.execute(f'SELECT COALESCE(SUM(points1),0) as p FROM events WHERE team1_id=? {clause}', params1).fetchone()['p']
-            p2 = conn.execute(f'SELECT COALESCE(SUM(points2),0) as p FROM events WHERE team2_id=? {clause}', params2).fetchone()['p']
-            result.append({**dict(t), 'total_points': p1 + p2})
-        result.sort(key=lambda x: x['total_points'], reverse=True)
-        return jsonify(result)
+        return jsonify(get_teams_data(conn, day))
 
 @app.route('/api/games')
 def get_games():
     with get_db() as conn:
-        rows = conn.execute('SELECT * FROM games ORDER BY category, name').fetchall()
+        rows = conn.execute('SELECT * FROM games ORDER BY day_tag, location, name').fetchall()
         return jsonify([dict(r) for r in rows])
 
 @app.route('/api/events')
@@ -211,8 +220,7 @@ def get_events():
     team_id = request.args.get('team_id')
     day = request.args.get('day', type=int)
     with get_db() as conn:
-        conditions = []
-        params = []
+        conditions, params = [], []
         if team_id:
             conditions.append('(e.team1_id=? OR e.team2_id=?)')
             params.extend([team_id, team_id])
@@ -228,7 +236,7 @@ def get_events():
             JOIN teams t1 ON e.team1_id = t1.id
             LEFT JOIN teams t2 ON e.team2_id = t2.id
             {where}
-            ORDER BY e.timestamp DESC LIMIT 100
+            ORDER BY e.timestamp DESC LIMIT 200
         ''', params).fetchall()
         return jsonify([dict(r) for r in rows])
 
@@ -240,23 +248,45 @@ def submit_points():
     day = int(data.get('day', 1))
     with get_db() as conn:
         conn.execute('''
-            INSERT INTO events (id, game_id, game_name, team1_id, team2_id,
-                points1, points2, note, event_type, day, timestamp)
+            INSERT INTO events (id,game_id,game_name,team1_id,team2_id,
+                points1,points2,note,event_type,day,timestamp)
             VALUES (?,?,?,?,?,?,?,?,?,?,?)
         ''', (event_id, data.get('game_id'), data['game_name'],
               data['team1_id'], data.get('team2_id'),
               int(data['points1']), int(data.get('points2', 0)),
               data.get('note', ''), data.get('event_type', 'game'), day, now))
         recalc_totals(conn)
-        teams = conn.execute('SELECT * FROM teams ORDER BY total_points DESC').fetchall()
-        ev = conn.execute('''
+        teams = [dict(t) for t in conn.execute('SELECT * FROM teams ORDER BY total_points DESC').fetchall()]
+        ev = dict(conn.execute('''
             SELECT e.*, t1.name as team1_name, t1.emoji as team1_emoji,
                 t2.name as team2_name, t2.emoji as team2_emoji
             FROM events e JOIN teams t1 ON e.team1_id=t1.id
-            LEFT JOIN teams t2 ON e.team2_id=t2.id
-            WHERE e.id=?
-        ''', (event_id,)).fetchone()
-    broadcast({'type': 'update', 'teams': [dict(t) for t in teams], 'latest_event': dict(ev)})
+            LEFT JOIN teams t2 ON e.team2_id=t2.id WHERE e.id=?
+        ''', (event_id,)).fetchone())
+    broadcast({'type': 'update', 'teams': teams, 'latest_event': ev})
+    return jsonify({'ok': True})
+
+@app.route('/api/submit-batch', methods=['POST'])
+def submit_batch():
+    events = request.json.get('events', [])
+    now = datetime.now().isoformat(timespec='seconds')
+    with get_db() as conn:
+        for data in events:
+            if int(data.get('points1', 0)) == 0 and int(data.get('points2', 0)) == 0:
+                continue  # skip zero-point events
+            event_id = str(uuid.uuid4())
+            conn.execute('''
+                INSERT INTO events (id,game_id,game_name,team1_id,team2_id,
+                    points1,points2,note,event_type,day,timestamp)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?)
+            ''', (event_id, data.get('game_id'), data['game_name'],
+                  data['team1_id'], data.get('team2_id'),
+                  int(data['points1']), int(data.get('points2', 0)),
+                  data.get('note', ''), data.get('event_type', 'game'),
+                  int(data.get('day', 1)), now))
+        recalc_totals(conn)
+        teams = [dict(t) for t in conn.execute('SELECT * FROM teams ORDER BY total_points DESC').fetchall()]
+    broadcast({'type': 'update', 'teams': teams, 'latest_event': None})
     return jsonify({'ok': True})
 
 @app.route('/api/teams/<team_id>', methods=['PATCH'])
@@ -273,8 +303,21 @@ def delete_event(event_id):
     with get_db() as conn:
         conn.execute('DELETE FROM events WHERE id=?', (event_id,))
         recalc_totals(conn)
-        teams = conn.execute('SELECT * FROM teams ORDER BY total_points DESC').fetchall()
-    broadcast({'type': 'update', 'teams': [dict(t) for t in teams], 'latest_event': None})
+        teams = [dict(t) for t in conn.execute('SELECT * FROM teams ORDER BY total_points DESC').fetchall()]
+    broadcast({'type': 'update', 'teams': teams, 'latest_event': None})
+    return jsonify({'ok': True})
+
+@app.route('/api/reset', methods=['POST'])
+def reset_leaderboard():
+    data = request.json
+    with get_db() as conn:
+        pw = get_setting(conn, 'password')
+        if data.get('password') != pw:
+            return jsonify({'ok': False}), 401
+        conn.execute('DELETE FROM events')
+        conn.execute('UPDATE teams SET total_points = 0')
+        teams = [dict(t) for t in conn.execute('SELECT * FROM teams ORDER BY total_points DESC').fetchall()]
+    broadcast({'type': 'reset', 'teams': teams})
     return jsonify({'ok': True})
 
 @app.route('/api/games', methods=['POST'])
@@ -282,8 +325,10 @@ def add_game():
     data = request.json
     game_id = str(uuid.uuid4())
     with get_db() as conn:
-        conn.execute('INSERT INTO games VALUES (?,?,?,?)',
-                     (game_id, data['name'], data['team_count'], data.get('category', 'game')))
+        conn.execute('INSERT INTO games (id,name,team_count,category,day_tag,location,ui_type,config) VALUES (?,?,?,?,?,?,?,?)',
+                     (game_id, data['name'], data['team_count'], data.get('category','game'),
+                      data.get('day_tag',0), data.get('location',''),
+                      data.get('ui_type','standard_1'), data.get('config','{}')))
     return jsonify({'ok': True, 'id': game_id})
 
 if __name__ == '__main__':

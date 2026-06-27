@@ -2,945 +2,1120 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Game Master — Operation inCISive</title>
-<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Orbitron:wght@700;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Game Master — inCISive 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Orbitron:wght@700;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-:root {
-  --bg: #05050f;
-  --surface: rgba(255,255,255,0.04);
-  --border: rgba(255,255,255,0.08);
-  --text: #e8e8f0;
-  --muted: #5a5a7a;
-  --accent: #F59E0B;
-  --glow: 0 0 30px rgba(245,158,11,0.3);
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#03040f;
+  --card:rgba(255,255,255,0.04);
+  --border:rgba(255,255,255,0.08);
+  --text:#e8e8f8;
+  --muted:#4a4a70;
+  --accent:#F59E0B;
+  --green:#22c55e;
+  --red:#ef4444;
+}
+html,body{height:100%;overflow:hidden}
+body{
+  font-family:'Space Grotesk',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  display:flex;
+  flex-direction:column;
+  max-height:100dvh;
 }
 
-body {
-  font-family: 'Space Grotesk', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
-  overflow-x: hidden;
-  position: relative;
+/* ── Galaxy background ── */
+canvas#stars{position:fixed;inset:0;z-index:0;pointer-events:none}
+.minion-scene{
+  position:fixed;bottom:0;left:0;right:0;
+  height:100px;z-index:1;pointer-events:none;
+  display:flex;align-items:flex-end;justify-content:space-around;
+  padding:0 20px;opacity:0.18;
+}
+.minion-scene svg{height:80px;width:auto}
+
+/* ── Layout ── */
+.app{
+  position:relative;z-index:10;
+  display:flex;flex-direction:column;
+  height:100dvh;max-height:100dvh;
+  overflow:hidden;
 }
 
-/* — Starfield — */
-canvas#stars {
-  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+/* ── Header ── */
+.hdr{
+  flex-shrink:0;
+  padding:14px 20px 10px;
+  border-bottom:1px solid var(--border);
+  background:rgba(3,4,15,0.9);
+  backdrop-filter:blur(12px);
+}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.hdr-title{
+  font-family:'Bangers',cursive;
+  font-size:1.5rem;letter-spacing:2px;
+  background:linear-gradient(135deg,#F59E0B,#FDE68A);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.hdr-badge{
+  font-size:0.65rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+  background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.3);
+  color:#F59E0B;padding:5px 10px;border-radius:8px;
+}
+.day-pills{display:flex;gap:6px}
+.day-pill{
+  flex:1;padding:8px;border-radius:10px;border:1.5px solid var(--border);
+  background:transparent;color:var(--muted);
+  font-family:'Space Grotesk',sans-serif;font-size:0.72rem;font-weight:700;
+  letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:all .2s;
+  text-align:center;
+}
+.day-pill.active{background:rgba(245,158,11,0.12);border-color:#F59E0B;color:#F59E0B}
+
+/* ── Step bar ── */
+.step-bar{
+  flex-shrink:0;
+  display:flex;gap:4px;padding:10px 20px 0;
+}
+.step-seg{
+  flex:1;height:3px;border-radius:99px;
+  background:var(--border);transition:background .3s;
+}
+.step-seg.done{background:rgba(245,158,11,0.4)}
+.step-seg.active{background:#F59E0B}
+
+/* ── Scroll area ── */
+.scroll-area{
+  flex:1;overflow-y:auto;overflow-x:hidden;
+  padding:16px 20px 24px;
+  -webkit-overflow-scrolling:touch;
+}
+.scroll-area::-webkit-scrollbar{width:3px}
+.scroll-area::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px}
+
+/* ── Step header ── */
+.step-hdr{margin-bottom:16px}
+.step-num{font-size:0.6rem;letter-spacing:3px;text-transform:uppercase;color:var(--muted)}
+.step-title{font-family:'Bangers',cursive;font-size:2rem;letter-spacing:2px;margin-top:2px}
+
+/* ── Card ── */
+.card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:18px;padding:18px;margin-bottom:14px;
 }
 
-/* — Header — */
-.header {
-  position: relative; z-index: 10;
-  padding: 28px 32px 0;
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
+/* ── Field label ── */
+.lbl{font-size:0.62rem;letter-spacing:3px;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:8px}
+
+/* ── Select ── */
+.sel-wrap{position:relative;margin-bottom:14px}
+.sel-wrap::after{content:'▾';position:absolute;right:14px;top:50%;transform:translateY(-50%);color:var(--accent);pointer-events:none}
+select{
+  width:100%;background:rgba(0,0,0,0.5);border:1.5px solid var(--border);
+  color:var(--text);padding:13px 36px 13px 14px;border-radius:12px;
+  font-family:'Space Grotesk',sans-serif;font-size:0.9rem;font-weight:500;
+  outline:none;appearance:none;cursor:pointer;transition:border-color .2s;
 }
-.logo-block .eyebrow {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 0.65rem;
-  letter-spacing: 4px;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: 4px;
+select:focus{border-color:var(--accent)}
+select option{background:#0d0d20}
+select optgroup{color:var(--muted);font-size:0.8rem}
+
+/* ── Team grid ── */
+.team-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.team-btn{
+  padding:12px 10px;border-radius:12px;border:1.5px solid var(--border);
+  background:transparent;cursor:pointer;transition:all .15s;
+  display:flex;align-items:center;gap:8px;
+  font-family:'Space Grotesk',sans-serif;
 }
-.logo-block h1 {
-  font-family: 'Bangers', cursive;
-  font-size: 2.4rem;
-  letter-spacing: 3px;
-  line-height: 1;
-  background: linear-gradient(135deg, #F59E0B 0%, #FDE68A 50%, #F59E0B 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  text-shadow: none;
-  filter: drop-shadow(0 0 20px rgba(245,158,11,0.5));
+.team-btn:active{transform:scale(0.97)}
+.team-btn.sel{border-color:var(--tc,#F59E0B);background:color-mix(in srgb,var(--tc,#F59E0B) 12%,transparent)}
+.team-btn .te{font-size:1.2rem}
+.team-btn .tn{font-size:0.8rem;font-weight:600;color:var(--text);flex:1}
+.team-btn .ck{font-size:0.65rem;background:var(--tc,#F59E0B);color:#000;padding:2px 6px;border-radius:99px;font-weight:700;opacity:0;transition:opacity .2s}
+.team-btn.sel .ck{opacity:1}
+
+/* ── Bottom action bar ── */
+.action-bar{
+  flex-shrink:0;
+  padding:12px 20px;border-top:1px solid var(--border);
+  background:rgba(3,4,15,0.95);backdrop-filter:blur(12px);
+  display:flex;gap:10px;
 }
-.gm-badge {
-  background: rgba(245,158,11,0.15);
-  border: 1px solid rgba(245,158,11,0.4);
-  border-radius: 8px;
-  padding: 8px 16px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: #F59E0B;
+.btn{
+  padding:14px;border:none;border-radius:14px;
+  font-family:'Space Grotesk',sans-serif;font-size:0.9rem;font-weight:700;
+  cursor:pointer;transition:all .2s;text-align:center;
+}
+.btn:active{transform:scale(0.97)}
+.btn-back{flex:0 0 56px;background:var(--card);border:1.5px solid var(--border);color:var(--muted)}
+.btn-next{flex:1;background:linear-gradient(135deg,#F59E0B,#F97316);color:#000}
+.btn-submit{flex:1;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;font-size:1rem}
+
+/* ── Points UI ── */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.col-header{
+  font-size:0.7rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+  text-align:center;padding:8px;border-radius:8px;margin-bottom:8px;
+  border:1px solid var(--border);color:var(--text);
+}
+.pt-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px}
+.pt-btn{
+  padding:13px 6px;border-radius:12px;border:1.5px solid transparent;
+  font-family:'Orbitron',monospace;font-size:0.8rem;font-weight:700;
+  cursor:pointer;transition:all .15s;text-align:center;
+}
+.pt-btn:active{transform:scale(0.95)}
+.pt-btn.pos{background:rgba(34,197,94,0.08);border-color:rgba(34,197,94,0.3);color:#4ade80}
+.pt-btn.pos:active,.pt-btn.pos.sel{background:#22c55e;color:#000;border-color:#22c55e}
+.pt-btn.neg{background:rgba(239,68,68,0.08);border-color:rgba(239,68,68,0.3);color:#f87171}
+.pt-btn.neg:active,.pt-btn.neg.sel{background:#ef4444;color:#fff;border-color:#ef4444}
+
+.manual-row{display:flex;gap:8px;margin-top:8px}
+.manual-row input{
+  flex:1;background:rgba(0,0,0,0.4);border:1.5px solid var(--border);
+  color:var(--text);padding:11px 12px;border-radius:10px;
+  font-family:'Space Grotesk',sans-serif;font-size:0.9rem;outline:none;
+  transition:border-color .2s;
+}
+.manual-row input:focus{border-color:var(--accent)}
+.manual-row input::placeholder{color:var(--muted)}
+.manual-row .add-btn{
+  padding:11px 14px;background:var(--card);border:1.5px solid var(--border);
+  border-radius:10px;color:var(--muted);font-family:'Space Grotesk',sans-serif;
+  font-size:0.85rem;font-weight:700;cursor:pointer;white-space:nowrap;
 }
 
-/* — Day Selector — */
-.day-selector {
-  position: relative; z-index: 10;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 20px 32px;
-  border-bottom: 1px solid var(--border);
+.tally-box{
+  margin-top:10px;background:rgba(0,0,0,0.4);border:1.5px solid var(--border);
+  border-radius:14px;padding:14px;text-align:center;
 }
-.day-label {
-  font-size: 0.7rem;
-  letter-spacing: 3px;
-  text-transform: uppercase;
-  color: var(--muted);
+.tally-lbl{font-size:0.58rem;letter-spacing:3px;text-transform:uppercase;color:var(--muted)}
+.tally-val{
+  font-family:'Orbitron',monospace;font-size:2.2rem;font-weight:900;
+  margin-top:4px;transition:color .3s;
 }
-.day-pills { display: flex; gap: 6px; }
-.day-pill {
-  padding: 7px 20px;
-  border-radius: 99px;
-  border: 1.5px solid var(--border);
-  background: transparent;
-  color: var(--muted);
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 0.8rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  letter-spacing: 1px;
-}
-.day-pill.active {
-  background: rgba(245,158,11,0.15);
-  border-color: #F59E0B;
-  color: #F59E0B;
+.tally-val.pos{color:#4ade80}.tally-val.neg{color:#f87171}.tally-val.zero{color:var(--muted)}
+.reset-btn{
+  margin-top:8px;background:none;border:1px solid var(--border);color:var(--muted);
+  padding:5px 12px;border-radius:99px;font-size:0.7rem;cursor:pointer;
+  font-family:'Space Grotesk',sans-serif;
 }
 
-/* — Main Layout — */
-.main {
-  position: relative; z-index: 10;
-  max-width: 640px;
-  margin: 0 auto;
-  padding: 40px 24px 60px;
+/* Win/Lose quick buttons */
+.wl-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.wl-btn{
+  padding:14px 8px;border-radius:14px;border:1.5px solid var(--border);
+  background:transparent;color:var(--text);font-family:'Space Grotesk',sans-serif;
+  font-size:0.82rem;font-weight:700;cursor:pointer;transition:all .15s;text-align:center;
+}
+.wl-btn:active{transform:scale(0.97)}
+.wl-btn.win-a{border-color:rgba(34,197,94,0.3);color:#4ade80}
+.wl-btn.win-a.sel{background:#22c55e;color:#000;border-color:#22c55e}
+.wl-btn.win-b{border-color:rgba(34,197,94,0.3);color:#4ade80}
+.wl-btn.win-b.sel{background:#22c55e;color:#000;border-color:#22c55e}
+
+/* Scoreboard (captain's ball) */
+.scoreboard{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;margin:8px 0}
+.score-side{text-align:center}
+.score-team-name{font-size:0.75rem;font-weight:700;margin-bottom:8px;color:var(--muted)}
+.score-count{
+  font-family:'Orbitron',monospace;font-size:3rem;font-weight:900;
+  margin:8px 0;line-height:1;
+}
+.score-btns{display:flex;gap:8px;justify-content:center}
+.score-btn{
+  width:44px;height:44px;border-radius:12px;border:1.5px solid var(--border);
+  background:var(--card);color:var(--text);font-size:1.2rem;font-weight:700;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:all .15s;
+}
+.score-btn:active{transform:scale(0.9);background:rgba(255,255,255,0.1)}
+.score-vs{font-family:'Bangers',cursive;font-size:1.5rem;color:var(--muted);letter-spacing:2px}
+.score-result{
+  text-align:center;margin-top:10px;padding:10px;border-radius:10px;
+  font-size:0.85rem;font-weight:700;
+  background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);color:#4ade80;
 }
 
-/* — Protocol steps — */
-.protocol-header {
-  margin-bottom: 36px;
+/* Splash ball rounds */
+.rounds-list{display:flex;flex-direction:column;gap:8px}
+.round-row{
+  background:rgba(0,0,0,0.3);border:1.5px solid var(--border);
+  border-radius:12px;padding:12px 14px;
 }
-.protocol-num {
-  font-family: 'Orbitron', monospace;
-  font-size: 0.6rem;
-  letter-spacing: 4px;
-  text-transform: uppercase;
-  color: var(--muted);
+.round-label{font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.round-picks{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.round-pick{
+  padding:11px;border-radius:10px;border:1.5px solid var(--border);
+  background:transparent;color:var(--muted);font-family:'Space Grotesk',sans-serif;
+  font-size:0.82rem;font-weight:700;cursor:pointer;transition:all .15s;text-align:center;
 }
-.protocol-title {
-  font-family: 'Bangers', cursive;
-  font-size: 2.8rem;
-  letter-spacing: 2px;
-  line-height: 1.05;
-  margin-top: 4px;
+.round-pick.sel{background:#22c55e;color:#000;border-color:#22c55e}
+.round-pick:active{transform:scale(0.97)}
+
+/* Multiplier */
+.multiplier-display{
+  text-align:center;padding:16px;background:rgba(0,0,0,0.4);
+  border:1.5px solid var(--border);border-radius:14px;margin-top:10px;
 }
-.protocol-sub {
-  color: var(--muted);
-  font-size: 0.85rem;
-  margin-top: 8px;
+.mult-equation{font-size:0.85rem;color:var(--muted);margin-bottom:4px}
+.mult-result{font-family:'Orbitron',monospace;font-size:2rem;font-weight:900;color:#4ade80}
+
+/* Relay ranking */
+.relay-list{display:flex;flex-direction:column;gap:8px}
+.relay-row{
+  display:flex;align-items:center;gap:12px;
+  background:rgba(0,0,0,0.3);border:1.5px solid var(--border);
+  border-radius:12px;padding:12px 14px;
+}
+.relay-place{font-family:'Bangers',cursive;font-size:1.4rem;letter-spacing:1px;width:36px;flex-shrink:0}
+.relay-pts{font-family:'Orbitron',monospace;font-size:0.7rem;color:var(--muted);flex-shrink:0;min-width:48px}
+.relay-select{flex:1}
+.relay-select select{margin:0;padding:10px 36px 10px 12px;font-size:0.82rem}
+
+/* Scavenger */
+.scav-list{display:flex;flex-direction:column;gap:8px}
+.scav-row{
+  background:rgba(0,0,0,0.3);border:1.5px solid var(--border);
+  border-radius:12px;padding:12px 14px;
+}
+.scav-team{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.scav-emoji{font-size:1.3rem}
+.scav-name{font-size:0.85rem;font-weight:700;flex:1}
+.scav-tiers{display:flex;gap:6px;flex-wrap:wrap}
+.scav-tier{
+  padding:8px 10px;border-radius:10px;border:1.5px solid var(--border);
+  background:transparent;color:var(--muted);font-family:'Orbitron',monospace;
+  font-size:0.72rem;font-weight:700;cursor:pointer;transition:all .15s;
+}
+.scav-tier.sel{background:#F59E0B;color:#000;border-color:#F59E0B}
+.scav-tier:active{transform:scale(0.95)}
+
+/* Preset */
+.preset-list{display:flex;flex-direction:column;gap:8px}
+.preset-btn{
+  padding:16px;border-radius:14px;border:1.5px solid var(--border);
+  background:rgba(0,0,0,0.3);color:var(--text);
+  font-family:'Space Grotesk',sans-serif;font-size:0.95rem;font-weight:700;
+  cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:space-between;
+}
+.preset-btn .pb-label{color:var(--muted);font-size:0.75rem}
+.preset-btn .pb-pts{font-family:'Orbitron',monospace;font-size:1.1rem;color:#4ade80}
+.preset-btn.sel{border-color:#F59E0B;background:rgba(245,158,11,0.1)}
+.preset-btn.sel .pb-pts{color:#F59E0B}
+.preset-btn:active{transform:scale(0.98)}
+
+/* Sabotage */
+.sabo-auto{
+  background:rgba(239,68,68,0.07);border:1.5px solid rgba(239,68,68,0.2);
+  border-radius:16px;padding:20px;text-align:center;
+}
+.sabo-icon{font-size:2.5rem;margin-bottom:10px}
+.sabo-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;font-size:0.9rem}
+.sabo-row .pts{font-family:'Orbitron',monospace;font-weight:900;font-size:1.1rem}
+.sabo-row .pts.pos{color:#4ade80}.sabo-row .pts.neg{color:#f87171}
+
+/* Summary */
+.summary{
+  background:rgba(0,0,0,0.3);border:1px solid var(--border);
+  border-radius:12px;padding:14px;font-size:0.85rem;color:var(--muted);line-height:1.9;
+}
+.summary strong{color:var(--text)}
+.summary .s-pts{font-family:'Orbitron',monospace;font-weight:700}
+.s-pos{color:#4ade80}.s-neg{color:#f87171}.s-acc{color:#F59E0B}
+
+/* Sabotage banner */
+.sabo-banner{
+  background:rgba(239,68,68,0.07);border:1.5px solid rgba(239,68,68,0.2);
+  border-radius:12px;padding:12px 14px;font-size:0.82rem;color:#fca5a5;
+  margin-bottom:12px;
 }
 
-/* Step nav — minimal progress bar */
-.step-bar {
-  display: flex;
-  gap: 4px;
-  margin-bottom: 40px;
+/* Toast */
+.toast{
+  position:fixed;top:20px;left:50%;
+  transform:translateX(-50%) translateY(-120px);
+  background:#22c55e;color:#fff;padding:12px 22px;border-radius:12px;
+  font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:0.88rem;
+  z-index:999;box-shadow:0 8px 24px rgba(0,0,0,0.5);
+  transition:transform .35s cubic-bezier(.34,1.56,.64,1);
 }
-.step-seg {
-  flex: 1;
-  height: 3px;
-  border-radius: 99px;
-  background: var(--border);
-  transition: background 0.4s;
-}
-.step-seg.done { background: rgba(245,158,11,0.5); }
-.step-seg.active { background: #F59E0B; }
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.err{background:#ef4444}
 
-/* — Card — */
-.card {
-  background: rgba(255,255,255,0.03);
-  border: 1px solid var(--border);
-  border-radius: 24px;
-  padding: 32px;
-  backdrop-filter: blur(12px);
-}
-
-/* — Field label — */
-.field-label {
-  font-size: 0.65rem;
-  letter-spacing: 3px;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: 10px;
-  display: block;
-}
-
-/* — Selects — */
-.select-wrap { position: relative; margin-bottom: 20px; }
-.select-wrap::after {
-  content: '▾';
-  position: absolute; right: 18px; top: 50%;
-  transform: translateY(-50%);
-  color: var(--accent); pointer-events: none;
-  font-size: 1rem;
-}
-select {
-  width: 100%;
-  background: rgba(0,0,0,0.4);
-  border: 1.5px solid var(--border);
-  color: var(--text);
-  padding: 15px 44px 15px 18px;
-  border-radius: 14px;
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 0.95rem;
-  font-weight: 500;
-  outline: none;
-  appearance: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
-  cursor: pointer;
-}
-select:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(245,158,11,0.15);
-}
-select option { background: #10101f; }
-select optgroup { color: var(--muted); font-size: 0.8rem; }
-
-/* — Team option cards — */
-.team-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-.team-option {
-  padding: 14px 16px;
-  border-radius: 14px;
-  border: 1.5px solid var(--border);
-  background: transparent;
-  cursor: pointer;
-  transition: all 0.2s;
-  text-align: left;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-family: 'Space Grotesk', sans-serif;
-}
-.team-option:hover { border-color: rgba(255,255,255,0.2); background: var(--surface); }
-.team-option.selected { border-color: var(--team-color, #F59E0B); background: color-mix(in srgb, var(--team-color, #F59E0B) 15%, transparent); }
-.team-option .t-emoji { font-size: 1.4rem; }
-.team-option .t-name { font-size: 0.85rem; font-weight: 600; color: var(--text); }
-.team-option .t-selected-badge {
-  margin-left: auto;
-  font-size: 0.65rem;
-  background: var(--team-color, #F59E0B);
-  color: #000;
-  padding: 2px 6px;
-  border-radius: 99px;
-  font-weight: 700;
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-.team-option.selected .t-selected-badge { opacity: 1; }
-
-/* Role labels for sabotage */
-.role-chips { display: flex; gap: 8px; margin-bottom: 14px; }
-.role-chip {
-  padding: 4px 12px;
-  border-radius: 99px;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-}
-.role-chip.attacker { background: rgba(239,68,68,0.2); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
-.role-chip.defender { background: rgba(34,197,94,0.2); color: #4ade80; border: 1px solid rgba(34,197,94,0.3); }
-
-/* Sabotage box */
-.sabotage-banner {
-  background: rgba(239,68,68,0.08);
-  border: 1.5px solid rgba(239,68,68,0.25);
-  border-radius: 14px;
-  padding: 16px 20px;
-  margin: 16px 0;
-  font-size: 0.85rem;
-  color: #fca5a5;
-  line-height: 1.7;
-}
-.sabotage-banner strong { color: #f87171; }
-
-/* — Points section — */
-.points-section { }
-.quick-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  margin-bottom: 16px;
-}
-.pt-btn {
-  padding: 16px 8px;
-  border-radius: 14px;
-  border: 1.5px solid transparent;
-  font-family: 'Orbitron', monospace;
-  font-size: 0.9rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.15s;
-  letter-spacing: 1px;
-}
-.pt-btn.pos {
-  background: rgba(34,197,94,0.08);
-  border-color: rgba(34,197,94,0.3);
-  color: #4ade80;
-}
-.pt-btn.pos:hover, .pt-btn.pos:active { background: #22c55e; color: #000; border-color: #22c55e; transform: scale(0.97); }
-.pt-btn.neg {
-  background: rgba(239,68,68,0.08);
-  border-color: rgba(239,68,68,0.3);
-  color: #f87171;
-}
-.pt-btn.neg:hover, .pt-btn.neg:active { background: #ef4444; color: #fff; border-color: #ef4444; transform: scale(0.97); }
-
-.manual-row { display: flex; gap: 8px; }
-.manual-row input {
-  flex: 1;
-  background: rgba(0,0,0,0.4);
-  border: 1.5px solid var(--border);
-  color: var(--text);
-  padding: 14px 16px;
-  border-radius: 12px;
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 0.95rem;
-  outline: none;
-  transition: border-color 0.2s;
-}
-.manual-row input:focus { border-color: var(--accent); }
-.manual-row input::placeholder { color: var(--muted); }
-
-/* Tally display */
-.tally-display {
-  margin: 20px 0;
-  background: rgba(0,0,0,0.4);
-  border: 1.5px solid var(--border);
-  border-radius: 18px;
-  padding: 24px;
-  text-align: center;
-  position: relative;
-  overflow: hidden;
-}
-.tally-display::before {
-  content: '';
-  position: absolute; inset: 0;
-  background: radial-gradient(ellipse at 50% 100%, var(--tally-glow, rgba(245,158,11,0.08)), transparent 70%);
-  pointer-events: none;
-}
-.tally-lbl { font-size: 0.6rem; letter-spacing: 4px; text-transform: uppercase; color: var(--muted); }
-.tally-val {
-  font-family: 'Orbitron', monospace;
-  font-size: 3.5rem;
-  font-weight: 900;
-  margin-top: 8px;
-  line-height: 1;
-  transition: color 0.3s;
-}
-.tally-val.pos { color: #4ade80; }
-.tally-val.neg { color: #f87171; }
-.tally-val.zero { color: var(--muted); }
-.tally-reset {
-  margin-top: 12px;
-  background: none;
-  border: 1px solid var(--border);
-  color: var(--muted);
-  padding: 6px 16px;
-  border-radius: 99px;
-  cursor: pointer;
-  font-size: 0.75rem;
-  font-family: 'Space Grotesk', sans-serif;
-  transition: all 0.2s;
-}
-.tally-reset:hover { border-color: var(--muted); color: var(--text); }
-
-/* — Divider — */
-.divider {
-  height: 1px; background: var(--border);
-  margin: 28px 0;
-  position: relative;
-}
-.divider::after {
-  content: attr(data-label);
-  position: absolute; left: 50%; top: 50%;
-  transform: translate(-50%, -50%);
-  background: #0d0d20;
-  padding: 0 12px;
-  font-size: 0.65rem;
-  letter-spacing: 3px;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
-/* — Timer — */
-.timer-face {
-  text-align: center;
-  margin: 16px 0;
-}
-.timer-time {
-  font-family: 'Orbitron', monospace;
-  font-size: 4.5rem;
-  font-weight: 900;
-  letter-spacing: 4px;
-  color: #38BDF8;
-  transition: color 0.3s;
-  line-height: 1;
-}
-.timer-time.warn { color: #F97316; }
-.timer-time.danger { color: #ef4444; animation: blink-timer 0.4s infinite alternate; }
-@keyframes blink-timer { from { opacity: 1; } to { opacity: 0.3; } }
-
-.timer-presets {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  margin: 14px 0;
-}
-.timer-preset {
-  padding: 11px;
-  border-radius: 12px;
-  border: 1.5px solid var(--border);
-  background: transparent;
-  color: #88aabb;
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.timer-preset:hover { border-color: #38BDF8; color: #38BDF8; background: rgba(56,189,248,0.08); }
-.timer-preset.selected { border-color: #38BDF8; color: #38BDF8; background: rgba(56,189,248,0.12); }
-
-.timer-controls { display: flex; gap: 8px; margin-top: 12px; }
-.timer-controls button { flex: 1; }
-
-/* — Buttons — */
-.btn {
-  padding: 15px 24px;
-  border: none;
-  border-radius: 14px;
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 0.9rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s;
-  letter-spacing: 0.5px;
-  width: 100%;
-}
-.btn-primary {
-  background: linear-gradient(135deg, #F59E0B, #F97316);
-  color: #000;
-}
-.btn-primary:hover { opacity: 0.88; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(245,158,11,0.3); }
-.btn-ghost {
-  background: transparent;
-  border: 1.5px solid var(--border);
-  color: var(--muted);
-}
-.btn-ghost:hover { border-color: rgba(255,255,255,0.2); color: var(--text); }
-.btn-submit {
-  background: linear-gradient(135deg, #22c55e, #16a34a);
-  color: #fff;
-  font-size: 1rem;
-  padding: 18px;
-  box-shadow: 0 4px 24px rgba(34,197,94,0.2);
-}
-.btn-submit:hover { box-shadow: 0 8px 32px rgba(34,197,94,0.35); transform: translateY(-2px); }
-
-.btn-row { display: flex; gap: 10px; margin-top: 24px; }
-.btn-row .btn { flex: 1; }
-
-/* — Summary card — */
-.summary-card {
-  background: rgba(0,0,0,0.3);
-  border: 1.5px solid var(--border);
-  border-radius: 16px;
-  padding: 18px 20px;
-  margin: 20px 0 0;
-  font-size: 0.88rem;
-  line-height: 2;
-  color: var(--muted);
-}
-.summary-card strong { color: var(--text); }
-.summary-card .pts-preview {
-  font-family: 'Orbitron', monospace;
-  font-weight: 700;
-}
-.pts-pos { color: #4ade80; }
-.pts-neg { color: #f87171; }
-
-/* — Toast — */
-.toast {
-  position: fixed; top: 24px; left: 50%;
-  transform: translateX(-50%) translateY(-120px);
-  background: #22c55e;
-  color: #fff;
-  padding: 14px 28px;
-  border-radius: 14px;
-  font-family: 'Space Grotesk', sans-serif;
-  font-weight: 700;
-  font-size: 0.95rem;
-  z-index: 999;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-.toast.show { transform: translateX(-50%) translateY(0); }
-.toast.err { background: #ef4444; }
-
-/* — Step visibility — */
-.step { display: none; }
-.step.active { display: block; }
-
-/* Sabotage auto section */
-.sabotage-auto {
-  background: rgba(239,68,68,0.07);
-  border: 1.5px solid rgba(239,68,68,0.2);
-  border-radius: 16px;
-  padding: 24px;
-  text-align: center;
-}
-.sabotage-auto .big-num {
-  font-family: 'Orbitron', monospace;
-  font-size: 2.5rem;
-  font-weight: 900;
-}
+/* Step visibility */
+.step{display:none}.step.active{display:block}
 </style>
 </head>
 <body>
 <canvas id="stars"></canvas>
 
-<div class="header">
-  <div class="logo-block">
-    <div class="eyebrow">Operation inCISive · Multiverse of Minions</div>
-    <h1>GAME MASTER</h1>
-  </div>
-  <div class="gm-badge">🎮 GM Console</div>
+<!-- Minion silhouettes -->
+<div class="minion-scene">
+  <!-- Minion 1 (small) -->
+  <svg viewBox="0 0 50 80" fill="rgba(180,140,20,1)">
+    <ellipse cx="25" cy="58" rx="16" ry="20"/>
+    <circle cx="25" cy="28" r="18"/>
+    <rect x="9" y="22" width="32" height="10" rx="5"/>
+    <circle cx="25" cy="27" r="9" fill="rgba(0,0,0,0.2)"/>
+    <line x1="20" y1="10" x2="18" y2="2" stroke="rgba(180,140,20,1)" stroke-width="3" stroke-linecap="round"/>
+    <line x1="25" y1="10" x2="25" y2="1" stroke="rgba(180,140,20,1)" stroke-width="3" stroke-linecap="round"/>
+    <line x1="30" y1="10" x2="32" y2="2" stroke="rgba(180,140,20,1)" stroke-width="3" stroke-linecap="round"/>
+    <rect x="13" y="42" width="24" height="18" rx="4" fill="rgba(20,40,120,0.6)"/>
+  </svg>
+  <!-- Minion 2 (leaning) -->
+  <svg viewBox="0 0 50 80" fill="rgba(200,160,0,1)" style="transform:rotate(-8deg)">
+    <ellipse cx="25" cy="60" rx="18" ry="18"/>
+    <circle cx="25" cy="28" r="20"/>
+    <rect x="7" y="21" width="36" height="12" rx="6"/>
+    <ellipse cx="19" cy="27" r="8" fill="rgba(0,0,0,0.15)"/>
+    <ellipse cx="33" cy="27" r="8" fill="rgba(0,0,0,0.15)"/>
+    <line x1="25" y1="8" x2="23" y2="-1" stroke="rgba(200,160,0,1)" stroke-width="4" stroke-linecap="round"/>
+    <line x1="30" y1="8" x2="34" y2="0" stroke="rgba(200,160,0,1)" stroke-width="3" stroke-linecap="round"/>
+    <rect x="11" y="44" width="28" height="16" rx="4" fill="rgba(30,50,140,0.6)"/>
+  </svg>
+  <!-- Minion 3 (tall) -->
+  <svg viewBox="0 0 50 90" fill="rgba(170,130,0,1)">
+    <ellipse cx="25" cy="65" rx="14" ry="22"/>
+    <circle cx="25" cy="28" r="20"/>
+    <rect x="7" y="21" width="36" height="12" rx="6"/>
+    <circle cx="25" cy="27" r="10" fill="rgba(0,0,0,0.15)"/>
+    <line x1="22" y1="8" x2="20" y2="-2" stroke="rgba(170,130,0,1)" stroke-width="3" stroke-linecap="round"/>
+    <line x1="28" y1="8" x2="30" y2="-2" stroke="rgba(170,130,0,1)" stroke-width="3" stroke-linecap="round"/>
+    <rect x="13" y="47" width="24" height="20" rx="4" fill="rgba(20,40,120,0.6)"/>
+  </svg>
+  <!-- Minion 4 -->
+  <svg viewBox="0 0 50 80" fill="rgba(190,150,10,1)" style="transform:rotate(5deg)">
+    <ellipse cx="25" cy="58" rx="17" ry="20"/>
+    <circle cx="25" cy="26" r="19"/>
+    <rect x="8" y="19" width="34" height="12" rx="6"/>
+    <ellipse cx="25" cy="26" r="10" fill="rgba(0,0,0,0.12)"/>
+    <line x1="25" y1="7" x2="25" y2="-3" stroke="rgba(190,150,10,1)" stroke-width="4" stroke-linecap="round"/>
+    <line x1="19" y1="8" x2="16" y2="0" stroke="rgba(190,150,10,1)" stroke-width="3" stroke-linecap="round"/>
+    <rect x="12" y="42" width="26" height="18" rx="4" fill="rgba(20,40,120,0.6)"/>
+  </svg>
 </div>
 
-<div class="day-selector">
-  <span class="day-label">Mission Phase</span>
-  <div class="day-pills">
-    <button class="day-pill active" data-day="1" onclick="setDay(1)">DAY 1 — Fix the Portal</button>
-    <button class="day-pill" data-day="2" onclick="setDay(2)">DAY 2 — Find Gru</button>
+<div class="app">
+  <!-- Header -->
+  <div class="hdr">
+    <div class="hdr-top">
+      <div class="hdr-title">🍌 GAME MASTER</div>
+      <div class="hdr-badge">GM Console</div>
+    </div>
+    <div class="day-pills">
+      <button class="day-pill active" data-d="1" onclick="setDay(1)">Day 1 — Fix the Portal</button>
+      <button class="day-pill" data-d="2" onclick="setDay(2)">Day 2 — Find Gru</button>
+    </div>
   </div>
-</div>
 
-<div class="main">
-
-  <!-- Progress bar -->
+  <!-- Step progress -->
   <div class="step-bar">
     <div class="step-seg active" id="seg1"></div>
     <div class="step-seg" id="seg2"></div>
     <div class="step-seg" id="seg3"></div>
   </div>
 
-  <!-- STEP 1 -->
-  <div class="step active" id="step1">
-    <div class="protocol-header">
-      <div class="protocol-num">Protocol 01 / 03</div>
-      <div class="protocol-title">Select<br>Activity</div>
-      <div class="protocol-sub">Choose the game or event to score</div>
-    </div>
-    <div class="card">
-      <span class="field-label">Activity</span>
-      <div class="select-wrap">
-        <select id="gameSelect" onchange="onGameChange()">
-          <option value="">— Choose an activity —</option>
-        </select>
+  <!-- Scrollable content -->
+  <div class="scroll-area" id="scrollArea">
+
+    <!-- STEP 1: Select Game -->
+    <div class="step active" id="step1">
+      <div class="step-hdr">
+        <div class="step-num">01 / 03 · Select Activity</div>
+        <div class="step-title">Which game?</div>
       </div>
-    </div>
-    <div class="btn-row">
-      <button class="btn btn-primary" onclick="goStep(2)">Next Protocol →</button>
-    </div>
-  </div>
-
-  <!-- STEP 2 -->
-  <div class="step" id="step2">
-    <div class="protocol-header">
-      <div class="protocol-num">Protocol 02 / 03</div>
-      <div class="protocol-title">Select<br>Universe(s)</div>
-      <div class="protocol-sub" id="step2Sub">Pick the team(s) competing</div>
-    </div>
-    <div class="card">
-
-      <div id="sabotageRoles" class="role-chips" style="display:none">
-        <div class="role-chip attacker">⚔️ Sabotager — Team 1</div>
-      </div>
-      <span class="field-label" id="t1Label">Team</span>
-      <div class="team-grid" id="teamGrid1"></div>
-
-      <div id="team2Section" style="display:none; margin-top:4px;">
-        <div id="sabotageRole2" class="role-chips" style="display:none">
-          <div class="role-chip defender">🛡️ Sabotaged — Team 2</div>
+      <div class="card">
+        <span class="lbl">Activity</span>
+        <div class="sel-wrap">
+          <select id="gameSelect" onchange="onGameChange()">
+            <option value="">— Choose an activity —</option>
+          </select>
         </div>
-        <span class="field-label" id="t2Label">vs. Team</span>
-        <div class="team-grid" id="teamGrid2"></div>
-      </div>
-
-      <div id="sabotageBanner" class="sabotage-banner" style="display:none">
-        🔥 <strong>Sabotage!</strong> The sabotaging team automatically gains
-        <strong id="saboWin">+50 pts</strong> and the sabotaged team loses
-        <strong id="saboLose">−50 pts</strong>. Applied on submit.
+        <div id="gameDesc" style="font-size:0.8rem;color:var(--muted);display:none;padding:8px 0 0"></div>
       </div>
     </div>
-    <div class="btn-row">
-      <button class="btn btn-ghost" onclick="goStep(1)">← Back</button>
-      <button class="btn btn-primary" onclick="goStep(3)">Next Protocol →</button>
-    </div>
-  </div>
 
-  <!-- STEP 3 -->
-  <div class="step" id="step3">
-    <div class="protocol-header">
-      <div class="protocol-num">Protocol 03 / 03</div>
-      <div class="protocol-title">Points &amp;<br>Timer</div>
-      <div class="protocol-sub">Tally up and start the clock</div>
+    <!-- STEP 2: Select Teams -->
+    <div class="step" id="step2">
+      <div class="step-hdr">
+        <div class="step-num">02 / 03 · Select Universe(s)</div>
+        <div class="step-title" id="s2Title">Which team?</div>
+      </div>
+      <div class="card">
+        <div id="saboBanner" class="sabo-banner" style="display:none">
+          🔥 <strong>Sabotage!</strong> Sabotaging team <strong>+50 pts</strong>, sabotaged team <strong>−50 pts</strong>
+        </div>
+        <div id="t1Section">
+          <span class="lbl" id="t1Lbl">Team</span>
+          <div class="team-grid" id="teamGrid1"></div>
+        </div>
+        <div id="t2Section" style="display:none;margin-top:4px">
+          <span class="lbl" id="t2Lbl">vs. Team</span>
+          <div class="team-grid" id="teamGrid2"></div>
+        </div>
+      </div>
     </div>
-    <div class="card">
 
-      <!-- NORMAL POINTS -->
-      <div id="normalPoints">
-        <span class="field-label">Quick Points</span>
-        <div class="quick-grid">
-          <button class="pt-btn pos" onclick="addPts(10)">+10</button>
-          <button class="pt-btn pos" onclick="addPts(50)">+50</button>
-          <button class="pt-btn pos" onclick="addPts(100)">+100</button>
-          <button class="pt-btn neg" onclick="addPts(-10)">−10</button>
-          <button class="pt-btn neg" onclick="addPts(-50)">−50</button>
-          <button class="pt-btn neg" onclick="addPts(-100)">−100</button>
+    <!-- STEP 3: Points -->
+    <div class="step" id="step3">
+      <div class="step-hdr">
+        <div class="step-num">03 / 03 · Points</div>
+        <div class="step-title" id="s3Title">Enter Points</div>
+      </div>
+
+      <!-- win_lose_2: quick win/lose + two tallies -->
+      <div id="ui_win_lose_2" class="card" style="display:none">
+        <span class="lbl">Quick Result</span>
+        <div class="wl-row" id="wlRow"></div>
+        <div class="two-col" id="wlCols"></div>
+      </div>
+
+      <!-- standard_2: two independent columns -->
+      <div id="ui_standard_2" class="card" style="display:none">
+        <span class="lbl">Points per Team</span>
+        <div class="two-col" id="s2Cols"></div>
+      </div>
+
+      <!-- standard_1: single team freeform -->
+      <div id="ui_standard_1" class="card" style="display:none">
+        <span class="lbl">Points</span>
+        <div class="pt-grid">
+          <button class="pt-btn pos" onclick="addTally1(10)">+10</button>
+          <button class="pt-btn pos" onclick="addTally1(50)">+50</button>
+          <button class="pt-btn pos" onclick="addTally1(100)">+100</button>
+          <button class="pt-btn neg" onclick="addTally1(-10)">−10</button>
+          <button class="pt-btn neg" onclick="addTally1(-50)">−50</button>
+          <button class="pt-btn neg" onclick="addTally1(-100)">−100</button>
         </div>
         <div class="manual-row">
-          <input type="number" id="manualPts" placeholder="Custom (e.g. 75 or −30)" />
-          <button class="btn btn-ghost" style="flex:0;width:auto;padding:14px 18px;" onclick="addManual()">Add</button>
+          <input type="number" id="man1" placeholder="Custom points"/>
+          <button class="add-btn" onclick="addManual1()">Add</button>
         </div>
-
-        <div class="tally-display" id="tallyBox">
-          <div class="tally-lbl">Running Tally</div>
-          <div class="tally-val zero" id="tallyVal">0</div>
-          <button class="tally-reset" onclick="resetTally()">↺ Reset</button>
-        </div>
-      </div>
-
-      <!-- SABOTAGE AUTO -->
-      <div id="sabotageAuto" style="display:none;">
-        <div class="sabotage-auto">
-          <div style="font-size:2rem; margin-bottom:8px;">🔥</div>
-          <div style="font-size:0.8rem; letter-spacing:2px; text-transform:uppercase; color:var(--muted); margin-bottom:16px;">Sabotage — Auto-scored</div>
-          <div style="color:#4ade80; margin-bottom:4px;"><span id="autoAttacker">—</span> <span class="big-num" style="color:#4ade80">+50</span></div>
-          <div style="color:#f87171;"><span id="autoTarget">—</span> <span class="big-num" style="color:#f87171">−50</span></div>
+        <div class="tally-box">
+          <div class="tally-lbl">Tally</div>
+          <div class="tally-val zero" id="tally1">0</div>
+          <button class="reset-btn" onclick="resetTally1()">↺ Reset</button>
         </div>
       </div>
 
-      <div class="divider" data-label="Timer"></div>
-
-      <div class="timer-face">
-        <div class="timer-time" id="timerDisp">00:00</div>
-      </div>
-      <div class="timer-presets">
-        <button class="timer-preset" onclick="setTimer(1)">1 min</button>
-        <button class="timer-preset" onclick="setTimer(3)">3 min</button>
-        <button class="timer-preset" onclick="setTimer(5)">5 min</button>
-        <button class="timer-preset" onclick="setTimer(10)">10 min</button>
-        <button class="timer-preset" onclick="setTimer(15)">15 min</button>
-        <button class="timer-preset" onclick="setTimer(20)">20 min</button>
-      </div>
-      <div class="manual-row" style="margin-top:0;">
-        <input type="number" id="customMin" placeholder="Custom minutes" min="1" max="99" />
-        <button class="btn btn-ghost" style="flex:0;width:auto;padding:14px 18px;" onclick="setCustomTimer()">Set</button>
-      </div>
-      <div class="timer-controls">
-        <button class="btn btn-ghost" id="timerToggle" onclick="toggleTimer()">▶ Start</button>
-        <button class="btn btn-ghost" style="flex:0;width:auto;padding:15px 18px;" onclick="resetTimer()">↺</button>
+      <!-- preset_1: preset buttons only -->
+      <div id="ui_preset_1" class="card" style="display:none">
+        <span class="lbl">Select Placing</span>
+        <div class="preset-list" id="presetList"></div>
       </div>
 
-      <div class="summary-card" id="summaryCard">—</div>
+      <!-- multiplier_1: handicap charades -->
+      <div id="ui_multiplier_1" class="card" style="display:none">
+        <span class="lbl">Number of Correct Guesses</span>
+        <input type="number" id="guessInput" min="0" placeholder="e.g. 7"
+          oninput="updateMultiplier()"
+          style="width:100%;background:rgba(0,0,0,0.4);border:1.5px solid var(--border);color:var(--text);padding:16px;border-radius:12px;font-size:1.5rem;font-family:'Orbitron',monospace;outline:none;text-align:center;font-weight:900"/>
+        <div class="multiplier-display">
+          <div class="mult-equation" id="multEq">0 × 20 pts = </div>
+          <div class="mult-result" id="multResult">0 pts</div>
+        </div>
+      </div>
+
+      <!-- captains_ball: scoreboard -->
+      <div id="ui_captains_ball" class="card" style="display:none">
+        <span class="lbl">⚽ Scoreboard — Goals</span>
+        <div class="scoreboard">
+          <div class="score-side">
+            <div class="score-team-name" id="cb_nameA">Team A</div>
+            <div class="score-count" id="cb_scoreA" style="color:#4ade80">0</div>
+            <div class="score-btns">
+              <button class="score-btn" onclick="cbGoal('A',-1)">−</button>
+              <button class="score-btn" onclick="cbGoal('A',1)">+</button>
+            </div>
+          </div>
+          <div class="score-vs">VS</div>
+          <div class="score-side">
+            <div class="score-team-name" id="cb_nameB">Team B</div>
+            <div class="score-count" id="cb_scoreB" style="color:#f87171">0</div>
+            <div class="score-btns">
+              <button class="score-btn" onclick="cbGoal('B',-1)">−</button>
+              <button class="score-btn" onclick="cbGoal('B',1)">+</button>
+            </div>
+          </div>
+        </div>
+        <div class="score-result" id="cbResult">First goal wins! 250 pts to the winner.</div>
+      </div>
+
+      <!-- splash_ball: 3 rounds -->
+      <div id="ui_splash_ball" class="card" style="display:none">
+        <span class="lbl">🌊 Pick Round Winners</span>
+        <div class="rounds-list" id="roundsList"></div>
+        <div class="tally-box" style="margin-top:10px">
+          <div id="splashSummary" style="font-size:0.85rem;color:var(--muted)">Select round winners above</div>
+        </div>
+      </div>
+
+      <!-- relay: assign places -->
+      <div id="ui_relay" style="display:none">
+        <div class="card">
+          <span class="lbl">🏃 Assign Places</span>
+          <div class="relay-list" id="relayList"></div>
+          <div style="font-size:0.75rem;color:var(--muted);margin-top:10px;text-align:center">
+            Teams not placed receive 0 points
+          </div>
+        </div>
+      </div>
+
+      <!-- scavenger: all teams get tiers -->
+      <div id="ui_scavenger" style="display:none">
+        <div class="card">
+          <span class="lbl">🗺️ Assign Points per Team</span>
+          <div class="scav-list" id="scavList"></div>
+        </div>
+      </div>
+
+      <!-- sabotage: auto -->
+      <div id="ui_sabotage" class="card" style="display:none">
+        <div class="sabo-auto">
+          <div class="sabo-icon">🔥</div>
+          <div style="font-size:0.7rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:14px">Auto-scored on Submit</div>
+          <div class="sabo-row">
+            <span id="saboAtkName">—</span>
+            <span class="pts pos">+50</span>
+          </div>
+          <div class="sabo-row">
+            <span id="saboTgtName">—</span>
+            <span class="pts neg">−50</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Summary -->
+      <div class="summary" id="summaryBox" style="margin-top:14px">—</div>
     </div>
 
-    <div class="btn-row">
-      <button class="btn btn-ghost" onclick="goStep(2)" style="flex:0;width:auto;padding:15px 20px;">←</button>
-      <button class="btn btn-submit" onclick="submitPoints()">✓ Confirm &amp; Submit</button>
-    </div>
+  </div><!-- end scroll-area -->
+
+  <!-- Action bar -->
+  <div class="action-bar" id="actionBar">
+    <button class="btn btn-back" id="backBtn" onclick="goBack()" style="display:none">←</button>
+    <button class="btn btn-next" id="nextBtn" onclick="goNext()">Next →</button>
   </div>
-
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
-// ── State ──────────────────────────────────────────────
-let games = [], teams = [];
-let selectedGame = null;
-let team1Id = null, team2Id = null;
-let tally = 0;
-let currentDay = 1;
-let timerSec = 0, timerRunning = false, timerInterval = null;
+// ── State ──────────────────────────────────────────
+let games=[], teams=[];
+let selGame=null, team1=null, team2=null;
+let currentStep=1, currentDay=1;
+let tally1=0, tally2=0;
+let cbScoreA=0, cbScoreB=0;
+let splashRounds=[null,null,null]; // null/1/2 (winner team index)
+let presetSelected=null;
+let scavTiers={};
+let relayPlaces={}; // place(1-4) -> teamId
+let multValue=0;
 
-// ── Starfield ──────────────────────────────────────────
-(function() {
-  const c = document.getElementById('stars');
-  const ctx = c.getContext('2d');
-  let W, H, stars = [];
-  function resize() { W = c.width = innerWidth; H = c.height = innerHeight; }
-  function mkStar() {
-    return { x: Math.random()*W, y: Math.random()*H,
-             r: Math.random()*1.2, a: Math.random(), da: (Math.random()-0.5)*0.005 };
-  }
-  function init() { resize(); stars = Array.from({length:120}, mkStar); }
-  function draw() {
+// ── Stars ──────────────────────────────────────────
+(()=>{
+  const c=document.getElementById('stars'),ctx=c.getContext('2d');
+  let W,H,stars=[];
+  const resize=()=>{W=c.width=innerWidth;H=c.height=innerHeight};
+  const mk=()=>({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.4+0.2,a:Math.random(),da:(Math.random()-.5)*.006});
+  const init=()=>{resize();stars=Array.from({length:140},mk)};
+  const draw=()=>{
     ctx.clearRect(0,0,W,H);
-    for (const s of stars) {
-      s.a = Math.max(0.05, Math.min(1, s.a + s.da));
-      if (s.a <= 0.05 || s.a >= 1) s.da *= -1;
-      ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
-      ctx.fillStyle = `rgba(200,200,255,${s.a})`;
-      ctx.fill();
+    for(const s of stars){
+      s.a=Math.max(.05,Math.min(1,s.a+s.da));
+      if(s.a<=.05||s.a>=1)s.da*=-1;
+      ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+      ctx.fillStyle=`rgba(200,210,255,${s.a})`;ctx.fill();
     }
     requestAnimationFrame(draw);
-  }
-  window.addEventListener('resize', resize);
-  init(); draw();
+  };
+  window.addEventListener('resize',resize);
+  init();draw();
 })();
 
-// ── Data loading ───────────────────────────────────────
-async function load() {
-  [games, teams] = await Promise.all([
+// ── Load data ──────────────────────────────────────
+async function load(){
+  [games,teams]=await Promise.all([
     fetch('/api/games').then(r=>r.json()),
-    fetch('/api/teams-live').then(r=>r.json()),
+    fetch('/api/teams').then(r=>r.json()),
   ]);
   renderGameSelect();
   renderTeamGrids();
 }
 
-function renderGameSelect() {
-  const sel = document.getElementById('gameSelect');
-  sel.innerHTML = '<option value="">— Choose an activity —</option>';
-  const cats = { game: '🎮 Games', misc: '⭐ Misc', sabotage: '🔥 Sabotage' };
-  const grouped = {};
-  for (const g of games) { (grouped[g.category]??=[]).push(g); }
-  for (const [cat, label] of Object.entries(cats)) {
-    if (!grouped[cat]) continue;
-    const og = document.createElement('optgroup');
-    og.label = label;
-    for (const g of grouped[cat]) {
-      const o = document.createElement('option');
-      o.value = g.id;
-      o.textContent = g.name + (g.team_count===2 ? ' (2 teams)' : '');
-      og.appendChild(o);
+function renderGameSelect(){
+  const sel=document.getElementById('gameSelect');
+  sel.innerHTML='<option value="">— Choose an activity —</option>';
+  // Group by day + location
+  const groups={};
+  for(const g of games){
+    const key=g.category==='misc'?'⭐ Miscellaneous':g.category==='sabotage'?'🔥 Sabotage'
+      :`${g.day_tag===1?'Day 1':g.day_tag===2?'Day 2':'General'} — ${g.location||'Other'}`;
+    (groups[key]??=[]).push(g);
+  }
+  for(const[label,gs] of Object.entries(groups)){
+    const og=document.createElement('optgroup');og.label=label;
+    for(const g of gs){
+      const o=document.createElement('option');
+      o.value=g.id;o.textContent=g.name;og.appendChild(o);
     }
     sel.appendChild(og);
   }
 }
 
-function renderTeamGrids() {
-  ['teamGrid1','teamGrid2'].forEach(id => {
-    const grid = document.getElementById(id);
-    grid.innerHTML = teams.map(t => `
-      <button class="team-option" style="--team-color:${t.color}"
-        data-id="${t.id}" data-grid="${id}" onclick="selectTeam('${id}','${t.id}')">
-        <span class="t-emoji">${t.emoji}</span>
-        <span class="t-name">${t.name}</span>
-        <span class="t-selected-badge">✓</span>
-      </button>
-    `).join('');
-  });
-}
-
-function selectTeam(gridId, teamId) {
-  document.querySelectorAll(`#${gridId} .team-option`).forEach(el => el.classList.remove('selected'));
-  document.querySelector(`#${gridId} [data-id="${teamId}"]`).classList.add('selected');
-  if (gridId === 'teamGrid1') team1Id = teamId;
-  else team2Id = teamId;
-  updateSummary();
-}
-
-function onGameChange() {
-  const id = document.getElementById('gameSelect').value;
-  selectedGame = games.find(g=>g.id===id) || null;
-}
-
-function setDay(d) {
-  currentDay = d;
-  document.querySelectorAll('.day-pill').forEach(el => el.classList.toggle('active', +el.dataset.day===d));
-}
-
-// ── Step navigation ────────────────────────────────────
-function goStep(n) {
-  if (n===2) {
-    if (!selectedGame) { toast('Select an activity first!', true); return; }
-    const isSabo = selectedGame.category==='sabotage';
-    const two = selectedGame.team_count===2;
-    document.getElementById('team2Section').style.display = two ? 'block' : 'none';
-    document.getElementById('sabotageBanner').style.display = isSabo ? 'block' : 'none';
-    document.getElementById('sabotageRoles').style.display = isSabo ? 'flex' : 'none';
-    document.getElementById('sabotageRole2').style.display = isSabo ? 'flex' : 'none';
-    document.getElementById('t1Label').textContent = isSabo ? 'Sabotaging Team' : 'Team';
-    document.getElementById('t2Label').textContent = isSabo ? 'Sabotaged Team' : 'vs. Team';
-    document.getElementById('step2Sub').textContent = isSabo
-      ? 'Who sabotages whom?' : two ? 'Pick both competing teams' : 'Which universe is playing?';
-    team1Id = null; team2Id = null;
-    renderTeamGrids();
+function renderTeamGrids(){
+  for(const gid of['teamGrid1','teamGrid2']){
+    document.getElementById(gid).innerHTML=teams.map(t=>`
+      <button class="team-btn" style="--tc:${t.color}" data-id="${t.id}" data-grid="${gid}"
+        onclick="selTeam('${gid}','${t.id}')">
+        <span class="te">${t.emoji}</span>
+        <span class="tn">${t.name.replace('-verse','')}</span>
+        <span class="ck">✓</span>
+      </button>`).join('');
   }
-  if (n===3) {
-    if (!team1Id) { toast('Select a team!', true); return; }
-    if (selectedGame.team_count===2 && !team2Id) { toast('Select both teams!', true); return; }
-    if (team1Id===team2Id) { toast('Teams must be different!', true); return; }
-    const isSabo = selectedGame.category==='sabotage';
-    document.getElementById('normalPoints').style.display = isSabo ? 'none' : 'block';
-    document.getElementById('sabotageAuto').style.display = isSabo ? 'block' : 'none';
-    if (isSabo) {
-      const at = teams.find(t=>t.id===team1Id);
-      const tg = teams.find(t=>t.id===team2Id);
-      document.getElementById('autoAttacker').textContent = at.emoji+' '+at.name;
-      document.getElementById('autoTarget').textContent = tg.emoji+' '+tg.name;
-    }
-    updateSummary();
+}
+
+function selTeam(gridId, tid){
+  document.querySelectorAll(`#${gridId} .team-btn`).forEach(el=>el.classList.remove('sel'));
+  document.querySelector(`#${gridId} [data-id="${tid}"]`).classList.add('sel');
+  if(gridId==='teamGrid1') team1=tid; else team2=tid;
+}
+
+function onGameChange(){
+  const id=document.getElementById('gameSelect').value;
+  selGame=games.find(g=>g.id===id)||null;
+  if(selGame){
+    const cfg=JSON.parse(selGame.config||'{}');
+    let desc='';
+    if(cfg.win) desc=`Win: +${cfg.win} pts${cfg.lose!==undefined?` / Lose: ${cfg.lose>=0?'+':''}${cfg.lose} pts`:''}`;
+    if(cfg.presets) desc=`Options: ${cfg.presets.join(', ')} pts`;
+    if(cfg.multiplier) desc=`Points = correct guesses × ${cfg.multiplier}`;
+    if(cfg.rounds) desc=`${cfg.rounds} rounds · ${cfg.win_per_round} pts per round won`;
+    if(cfg.places) desc=`1st: ${cfg.places[0]}, 2nd: ${cfg.places[1]}, 3rd: ${cfg.places[2]}, 4th: ${cfg.places[3]} pts`;
+    if(cfg.tiers) desc=`Tiers: ${cfg.tiers.join(' / ')} pts`;
+    const d=document.getElementById('gameDesc');
+    d.style.display=desc?'block':'none'; d.textContent=desc;
   }
-  // Animate segments
-  ['seg1','seg2','seg3'].forEach((id,i) => {
-    document.getElementById(id).className = 'step-seg' + (i+1<n?' done':i+1===n?' active':'');
+}
+
+function setDay(d){
+  currentDay=d;
+  document.querySelectorAll('.day-pill').forEach(el=>el.classList.toggle('active',+el.dataset.d===d));
+}
+
+// ── Navigation ─────────────────────────────────────
+function goNext(){
+  if(currentStep===1){
+    if(!selGame){toast('Select a game first!',true);return}
+    setupStep2();
+    goStep(2);
+  } else if(currentStep===2){
+    if(!validateStep2()) return;
+    setupStep3();
+    goStep(3);
+    document.getElementById('nextBtn').textContent='✓ Submit';
+    document.getElementById('nextBtn').className='btn btn-submit';
+    document.getElementById('nextBtn').onclick=submitPoints;
+  }
+}
+
+function goBack(){
+  if(currentStep===2) goStep(1);
+  else if(currentStep===3){
+    goStep(2);
+    document.getElementById('nextBtn').textContent='Next →';
+    document.getElementById('nextBtn').className='btn btn-next';
+    document.getElementById('nextBtn').onclick=goNext;
+  }
+}
+
+function goStep(n){
+  currentStep=n;
+  ['seg1','seg2','seg3'].forEach((id,i)=>{
+    document.getElementById(id).className='step-seg'+(i+1<n?' done':i+1===n?' active':'');
   });
   document.querySelectorAll('.step').forEach(el=>el.classList.remove('active'));
   document.getElementById('step'+n).classList.add('active');
-  window.scrollTo({top:0, behavior:'smooth'});
+  document.getElementById('backBtn').style.display=n>1?'flex':'none';
+  document.getElementById('scrollArea').scrollTop=0;
 }
 
-// ── Points ─────────────────────────────────────────────
-function addPts(v) {
-  tally += v;
-  updateTally();
-  // Flash the tally
-  const box = document.getElementById('tallyBox');
-  box.style.transform = 'scale(1.04)';
-  setTimeout(()=>box.style.transform='',200);
+function validateStep2(){
+  const ui=selGame.ui_type;
+  if(['relay','scavenger'].includes(ui)) return true; // no team pick needed
+  if(!team1){toast('Select a team!',true);return false}
+  if(selGame.team_count===2&&!team2){toast('Select both teams!',true);return false}
+  if(team1===team2){toast('Teams must be different!',true);return false}
+  return true;
 }
-function addManual() {
-  const v = parseInt(document.getElementById('manualPts').value);
-  if (isNaN(v)) { toast('Enter a valid number', true); return; }
-  document.getElementById('manualPts').value = '';
-  addPts(v);
+
+// ── Step 2 setup ───────────────────────────────────
+function setupStep2(){
+  const ui=selGame.ui_type;
+  const isSabo=ui==='sabotage';
+  const twoTeams=['win_lose_2','standard_2','captains_ball','splash_ball','sabotage'].includes(ui);
+  const isSpecial=['relay','scavenger'].includes(ui);
+  team1=null;team2=null;
+  renderTeamGrids();
+  document.getElementById('t2Section').style.display=twoTeams&&!isSpecial?'block':'none';
+  document.getElementById('saboBanner').style.display=isSabo?'block':'none';
+  document.getElementById('t1Lbl').textContent=isSabo?'⚔️ Sabotaging Team':'Team';
+  document.getElementById('t2Lbl').textContent=isSabo?'🎯 Sabotaged Team':'vs. Team';
+  document.getElementById('t1Section').style.display=isSpecial?'none':'block';
+  if(isSpecial){
+    document.getElementById('s2Title').textContent='All set — points next';
+    // Skip team selection, go straight to step 3
+    setupStep3();goStep(3);
+    document.getElementById('nextBtn').textContent='✓ Submit';
+    document.getElementById('nextBtn').className='btn btn-submit';
+    document.getElementById('nextBtn').onclick=submitPoints;
+    return;
+  }
+  document.getElementById('s2Title').textContent=
+    twoTeams?'Pick both universes':'Which universe?';
 }
-function resetTally() { tally=0; updateTally(); }
-function updateTally() {
-  const el = document.getElementById('tallyVal');
-  el.textContent = (tally>0?'+':'')+tally;
-  el.className = 'tally-val' + (tally>0?' pos':tally<0?' neg':' zero');
-  document.getElementById('tallyBox').style.setProperty('--tally-glow',
-    tally>0?'rgba(74,222,128,0.1)':tally<0?'rgba(248,113,113,0.1)':'rgba(245,158,11,0.08)');
+
+// ── Step 3 setup ───────────────────────────────────
+function setupStep3(){
+  // Hide all UIs
+  ['win_lose_2','standard_2','standard_1','preset_1','multiplier_1',
+   'captains_ball','splash_ball','relay','scavenger','sabotage'].forEach(u=>{
+    document.getElementById('ui_'+u).style.display='none';
+  });
+  tally1=0;tally2=0;cbScoreA=0;cbScoreB=0;
+  splashRounds=[null,null,null];presetSelected=null;scavTiers={};relayPlaces={};multValue=0;
+
+  const ui=selGame.ui_type;
+  const cfg=JSON.parse(selGame.config||'{}');
+  const t1=teams.find(t=>t.id===team1);
+  const t2=teams.find(t=>t.id===team2);
+  document.getElementById('s3Title').textContent=selGame.name;
+
+  if(ui==='win_lose_2'){
+    document.getElementById('ui_win_lose_2').style.display='block';
+    const win=cfg.win||0, lose=cfg.lose??0;
+    document.getElementById('wlRow').innerHTML=`
+      <button class="wl-btn win-a" onclick="setWinLose(1)">🏆 ${t1?.emoji} ${t1?.name.replace('-verse','')} Wins</button>
+      <button class="wl-btn win-b" onclick="setWinLose(2)">🏆 ${t2?.emoji} ${t2?.name.replace('-verse','')} Wins</button>`;
+    document.getElementById('wlCols').innerHTML=`
+      <div>
+        <div class="col-header" style="color:${t1?.color}">${t1?.emoji} ${t1?.name.replace('-verse','')}</div>
+        <div class="tally-box"><div class="tally-lbl">Points</div><div class="tally-val zero" id="wlTally1">0</div></div>
+      </div>
+      <div>
+        <div class="col-header" style="color:${t2?.color}">${t2?.emoji} ${t2?.name.replace('-verse','')}</div>
+        <div class="tally-box"><div class="tally-lbl">Points</div><div class="tally-val zero" id="wlTally2">0</div></div>
+      </div>`;
+  }
+  else if(ui==='standard_2'){
+    document.getElementById('ui_standard_2').style.display='block';
+    document.getElementById('s2Cols').innerHTML=`
+      <div>
+        <div class="col-header" style="color:${t1?.color}">${t1?.emoji} ${t1?.name.replace('-verse','')}</div>
+        <div class="pt-grid">
+          <button class="pt-btn pos" onclick="addTally1(50)">+50</button>
+          <button class="pt-btn pos" onclick="addTally1(100)">+100</button>
+          <button class="pt-btn neg" onclick="addTally1(-50)">−50</button>
+          <button class="pt-btn neg" onclick="addTally1(-100)">−100</button>
+        </div>
+        <div class="manual-row"><input type="number" id="man1A" placeholder="Custom"/><button class="add-btn" onclick="addManualA()">+</button></div>
+        <div class="tally-box"><div class="tally-lbl">Tally</div><div class="tally-val zero" id="tally1Display">0</div><button class="reset-btn" onclick="resetTally1()">↺</button></div>
+      </div>
+      <div>
+        <div class="col-header" style="color:${t2?.color}">${t2?.emoji} ${t2?.name.replace('-verse','')}</div>
+        <div class="pt-grid">
+          <button class="pt-btn pos" onclick="addTally2(50)">+50</button>
+          <button class="pt-btn pos" onclick="addTally2(100)">+100</button>
+          <button class="pt-btn neg" onclick="addTally2(-50)">−50</button>
+          <button class="pt-btn neg" onclick="addTally2(-100)">−100</button>
+        </div>
+        <div class="manual-row"><input type="number" id="man2A" placeholder="Custom"/><button class="add-btn" onclick="addManualB()">+</button></div>
+        <div class="tally-box"><div class="tally-lbl">Tally</div><div class="tally-val zero" id="tally2Display">0</div><button class="reset-btn" onclick="resetTally2()">↺</button></div>
+      </div>`;
+  }
+  else if(ui==='standard_1'){
+    document.getElementById('ui_standard_1').style.display='block';
+    updateTally1Display();
+  }
+  else if(ui==='preset_1'){
+    document.getElementById('ui_preset_1').style.display='block';
+    const presets=cfg.presets||[], labels=cfg.labels||[];
+    document.getElementById('presetList').innerHTML=presets.map((p,i)=>`
+      <button class="preset-btn" onclick="selectPreset(${p},this)">
+        <span>${labels[i]||'Option '+(i+1)}</span>
+        <span class="pb-pts">${p} pts</span>
+      </button>`).join('');
+  }
+  else if(ui==='multiplier_1'){
+    document.getElementById('ui_multiplier_1').style.display='block';
+    document.getElementById('guessInput').value='';
+    updateMultiplier();
+  }
+  else if(ui==='captains_ball'){
+    document.getElementById('ui_captains_ball').style.display='block';
+    document.getElementById('cb_nameA').textContent=t1?.emoji+' '+t1?.name.replace('-verse','');
+    document.getElementById('cb_nameB').textContent=t2?.emoji+' '+t2?.name.replace('-verse','');
+    updateCBDisplay();
+  }
+  else if(ui==='splash_ball'){
+    document.getElementById('ui_splash_ball').style.display='block';
+    const rounds=cfg.rounds||3;
+    document.getElementById('roundsList').innerHTML=Array.from({length:rounds},(_,i)=>`
+      <div class="round-row">
+        <div class="round-label">Round ${i+1}</div>
+        <div class="round-picks">
+          <button class="round-pick" id="rp${i}_1" onclick="pickRound(${i},0)">${t1?.emoji} ${t1?.name.replace('-verse','')}</button>
+          <button class="round-pick" id="rp${i}_2" onclick="pickRound(${i},1)">${t2?.emoji} ${t2?.name.replace('-verse','')}</button>
+        </div>
+      </div>`).join('');
+    updateSplashSummary();
+  }
+  else if(ui==='relay'){
+    document.getElementById('ui_relay').style.display='block';
+    const places=cfg.places||[400,300,200,100];
+    const medals=['🥇','🥈','🥉','4️⃣'];
+    document.getElementById('relayList').innerHTML=places.map((p,i)=>`
+      <div class="relay-row">
+        <div class="relay-place">${medals[i]||i+1}</div>
+        <div class="relay-pts">${p} pts</div>
+        <div class="relay-select sel-wrap">
+          <select onchange="setRelayPlace(${i+1},this.value)">
+            <option value="">— Select —</option>
+            ${teams.map(t=>`<option value="${t.id}">${t.emoji} ${t.name.replace('-verse','')}</option>`).join('')}
+          </select>
+        </div>
+      </div>`).join('');
+  }
+  else if(ui==='scavenger'){
+    document.getElementById('ui_scavenger').style.display='block';
+    const tiers=cfg.tiers||[20,50,100,200,500];
+    document.getElementById('scavList').innerHTML=teams.map(t=>`
+      <div class="scav-row">
+        <div class="scav-team"><span class="scav-emoji">${t.emoji}</span><span class="scav-name">${t.name}</span></div>
+        <div class="scav-tiers">
+          ${tiers.map(p=>`<button class="scav-tier" data-team="${t.id}" data-pts="${p}" onclick="setScavTier('${t.id}',${p},this)">${p}</button>`).join('')}
+          <button class="scav-tier" style="color:var(--muted)" data-team="${t.id}" data-pts="0" onclick="setScavTier('${t.id}',0,this)">—</button>
+        </div>
+      </div>`).join('');
+  }
+  else if(ui==='sabotage'){
+    document.getElementById('ui_sabotage').style.display='block';
+    document.getElementById('saboAtkName').textContent=t1?.emoji+' '+t1?.name;
+    document.getElementById('saboTgtName').textContent=t2?.emoji+' '+t2?.name;
+  }
   updateSummary();
 }
-function updateSummary() {
-  const t1 = teams.find(t=>t.id===team1Id);
-  const t2 = teams.find(t=>t.id===team2Id);
-  const isSabo = selectedGame?.category==='sabotage';
-  let html = `<strong>${selectedGame?.name||'—'}</strong> · Day ${currentDay}<br>`;
-  if (t1) html += `${t1.emoji} ${t1.name}`;
-  if (t2) html += ` <span style="color:var(--muted)">vs</span> ${t2.emoji} ${t2.name}`;
-  html += '<br>';
-  if (isSabo) {
-    html += `Points: <span class="pts-preview pts-pos">+50</span> / <span class="pts-preview pts-neg">−50</span> (automatic)`;
-  } else {
-    const cls = tally>=0?'pts-pos':'pts-neg';
-    html += `Submitting: <span class="pts-preview ${cls}">${tally>0?'+':''}${tally} pts</span>`;
-  }
-  document.getElementById('summaryCard').innerHTML = html;
+
+// ── Points helpers ─────────────────────────────────
+function addTally1(v){tally1+=v;updateTally1Display();updateSummary()}
+function addTally2(v){tally2+=v;updateTally2Display();updateSummary()}
+function resetTally1(){tally1=0;updateTally1Display();updateSummary()}
+function resetTally2(){tally2=0;updateTally2Display();updateSummary()}
+function addManual1(){const v=parseInt(document.getElementById('man1').value);if(!isNaN(v)){addTally1(v);document.getElementById('man1').value=''}}
+function addManualA(){const v=parseInt(document.getElementById('man1A').value);if(!isNaN(v)){addTally1(v);document.getElementById('man1A').value=''}}
+function addManualB(){const v=parseInt(document.getElementById('man2A').value);if(!isNaN(v)){addTally2(v);document.getElementById('man2A').value=''}}
+
+function updateTally1Display(){
+  const el=document.getElementById('tally1')||document.getElementById('tally1Display');
+  if(!el) return;
+  el.textContent=(tally1>0?'+':'')+tally1;
+  el.className='tally-val'+(tally1>0?' pos':tally1<0?' neg':' zero');
+}
+function updateTally2Display(){
+  const el=document.getElementById('tally2Display');
+  if(!el) return;
+  el.textContent=(tally2>0?'+':'')+tally2;
+  el.className='tally-val'+(tally2>0?' pos':tally2<0?' neg':' zero');
 }
 
-// ── Submit ─────────────────────────────────────────────
-async function submitPoints() {
-  const isSabo = selectedGame.category==='sabotage';
-  const body = {
-    game_id: selectedGame.id,
-    game_name: selectedGame.name,
-    team1_id: team1Id,
-    event_type: selectedGame.category,
-    day: currentDay,
-  };
-  if (isSabo) {
-    body.team2_id = team2Id;
-    body.points1 = 50; body.points2 = -50;
-    const at = teams.find(t=>t.id===team1Id);
-    const tg = teams.find(t=>t.id===team2Id);
-    body.note = `${at.name} sabotaged ${tg.name}`;
-  } else {
-    body.points1 = tally;
-    if (selectedGame.team_count===2) { body.team2_id = team2Id; body.points2 = 0; }
+function setWinLose(winner){
+  const cfg=JSON.parse(selGame.config||'{}');
+  const win=cfg.win||0, lose=cfg.lose??0;
+  tally1=winner===1?win:lose;
+  tally2=winner===2?win:lose;
+  document.querySelectorAll('.wl-btn').forEach(el=>el.classList.remove('sel'));
+  document.querySelectorAll('.wl-btn')[winner-1].classList.add('sel');
+  const e1=document.getElementById('wlTally1'),e2=document.getElementById('wlTally2');
+  if(e1){e1.textContent=(tally1>0?'+':'')+tally1;e1.className='tally-val'+(tally1>0?' pos':tally1<0?' neg':' zero')}
+  if(e2){e2.textContent=(tally2>0?'+':'')+tally2;e2.className='tally-val'+(tally2>0?' pos':tally2<0?' neg':' zero')}
+  updateSummary();
+}
+
+function selectPreset(pts, btn){
+  presetSelected=pts;
+  document.querySelectorAll('.preset-btn').forEach(el=>el.classList.remove('sel'));
+  btn.classList.add('sel');
+  updateSummary();
+}
+
+function updateMultiplier(){
+  const v=parseInt(document.getElementById('guessInput').value)||0;
+  multValue=v*20;
+  document.getElementById('multEq').textContent=`${v} × 20 pts =`;
+  document.getElementById('multResult').textContent=`${multValue} pts`;
+  updateSummary();
+}
+
+function cbGoal(side, delta){
+  if(side==='A') cbScoreA=Math.max(0,cbScoreA+delta);
+  else cbScoreB=Math.max(0,cbScoreB+delta);
+  updateCBDisplay();updateSummary();
+}
+function updateCBDisplay(){
+  document.getElementById('cb_scoreA').textContent=cbScoreA;
+  document.getElementById('cb_scoreB').textContent=cbScoreB;
+  const t1=teams.find(t=>t.id===team1);
+  const t2=teams.find(t=>t.id===team2);
+  const res=document.getElementById('cbResult');
+  if(cbScoreA>cbScoreB) res.textContent=`${t1?.emoji} ${t1?.name.replace('-verse','')} leads → wins 250 pts!`;
+  else if(cbScoreB>cbScoreA) res.textContent=`${t2?.emoji} ${t2?.name.replace('-verse','')} leads → wins 250 pts!`;
+  else res.textContent='Tied — first goal wins 250 pts!';
+}
+
+function pickRound(round, teamIdx){
+  splashRounds[round]=teamIdx;
+  document.getElementById(`rp${round}_1`).classList.toggle('sel',teamIdx===0);
+  document.getElementById(`rp${round}_2`).classList.toggle('sel',teamIdx===1);
+  updateSplashSummary();updateSummary();
+}
+function updateSplashSummary(){
+  const cfg=JSON.parse(selGame?.config||'{}');
+  const ppr=cfg.win_per_round||250;
+  const w1=splashRounds.filter(r=>r===0).length;
+  const w2=splashRounds.filter(r=>r===1).length;
+  const t1=teams.find(t=>t.id===team1);
+  const t2=teams.find(t=>t.id===team2);
+  document.getElementById('splashSummary').innerHTML=
+    `${t1?.emoji} ${w1} round(s) = <strong>${w1*ppr} pts</strong><br>${t2?.emoji} ${w2} round(s) = <strong>${w2*ppr} pts</strong>`;
+}
+
+function setRelayPlace(place, teamId){
+  // Remove this team from other places
+  for(const k of Object.keys(relayPlaces)){
+    if(relayPlaces[k]===teamId) delete relayPlaces[k];
   }
-  const res = await fetch('/api/submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-  if (res.ok) {
+  if(teamId) relayPlaces[place]=teamId;
+  updateSummary();
+}
+
+function setScavTier(teamId, pts, btn){
+  scavTiers[teamId]=pts;
+  document.querySelectorAll(`.scav-tier[data-team="${teamId}"]`).forEach(el=>el.classList.remove('sel'));
+  btn.classList.add('sel');
+  updateSummary();
+}
+
+// ── Summary ────────────────────────────────────────
+function updateSummary(){
+  if(!selGame){return}
+  const ui=selGame.ui_type;
+  const t1=teams.find(t=>t.id===team1);
+  const t2=teams.find(t=>t.id===team2);
+  let html=`<strong>${selGame.name}</strong> · Day ${currentDay}<br>`;
+  if(t1) html+=`${t1.emoji} ${t1.name}`;
+  if(t2) html+=` <span style="color:var(--muted)">vs</span> ${t2.emoji} ${t2.name}`;
+  html+='<br>';
+  if(ui==='sabotage') html+=`Points: <span class="s-pts s-pos">+50</span> / <span class="s-pts s-neg">−50</span>`;
+  else if(ui==='preset_1'&&presetSelected!==null) html+=`Points: <span class="s-pts s-acc">${presetSelected} pts</span>`;
+  else if(ui==='multiplier_1') html+=`Points: <span class="s-pts s-pos">${multValue} pts</span>`;
+  else if(['win_lose_2','standard_2'].includes(ui)) html+=`${t1?.emoji} <span class="s-pts ${tally1>=0?'s-pos':'s-neg'}">${tally1>0?'+':''}${tally1}</span> / ${t2?.emoji} <span class="s-pts ${tally2>=0?'s-pos':'s-neg'}">${tally2>0?'+':''}${tally2}</span>`;
+  else if(ui==='standard_1') html+=`Points: <span class="s-pts ${tally1>=0?'s-pos':'s-neg'}">${tally1>0?'+':''}${tally1}</span>`;
+  document.getElementById('summaryBox').innerHTML=html;
+}
+
+// ── Submit ─────────────────────────────────────────
+async function submitPoints(){
+  const ui=selGame.ui_type;
+  const cfg=JSON.parse(selGame.config||'{}');
+  let ok=false;
+
+  if(ui==='relay'){
+    const places=cfg.places||[400,300,200,100];
+    const evs=[];
+    for(let i=0;i<places.length;i++){
+      const tid=relayPlaces[i+1];
+      if(tid) evs.push({game_id:selGame.id,game_name:selGame.name,team1_id:tid,points1:places[i],event_type:'game',day:currentDay,note:`Place ${i+1}`});
+    }
+    if(!evs.length){toast('Assign at least one place!',true);return}
+    const r=await fetch('/api/submit-batch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({events:evs})});
+    ok=r.ok;
+  }
+  else if(ui==='scavenger'){
+    const evs=[];
+    for(const[tid,pts] of Object.entries(scavTiers)){
+      if(pts>0) evs.push({game_id:selGame.id,game_name:selGame.name,team1_id:tid,points1:pts,event_type:'game',day:currentDay});
+    }
+    if(!evs.length){toast('Assign points to at least one team!',true);return}
+    const r=await fetch('/api/submit-batch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({events:evs})});
+    ok=r.ok;
+  }
+  else if(ui==='splash_ball'){
+    const ppr=cfg.win_per_round||250;
+    const w1=splashRounds.filter(r=>r===0).length;
+    const w2=splashRounds.filter(r=>r===1).length;
+    if(splashRounds.every(r=>r===null)){toast('Pick at least one round winner!',true);return}
+    const body={game_id:selGame.id,game_name:selGame.name,team1_id:team1,team2_id:team2,points1:w1*ppr,points2:w2*ppr,event_type:'game',day:currentDay,note:`${w1}-${w2} rounds`};
+    const r=await fetch('/api/submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    ok=r.ok;
+  }
+  else if(ui==='captains_ball'){
+    const win=cfg.win||250;
+    let p1=0,p2=0;
+    if(cbScoreA>cbScoreB) p1=win; else if(cbScoreB>cbScoreA) p2=win;
+    else{toast('Scores are tied — no winner yet!',true);return}
+    const body={game_id:selGame.id,game_name:selGame.name,team1_id:team1,team2_id:team2,points1:p1,points2:p2,event_type:'game',day:currentDay,note:`${cbScoreA}-${cbScoreB} goals`};
+    const r=await fetch('/api/submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    ok=r.ok;
+  }
+  else if(ui==='sabotage'){
+    const body={game_id:selGame.id,game_name:'Sabotage',team1_id:team1,team2_id:team2,points1:50,points2:-50,event_type:'sabotage',day:currentDay,
+      note:`${teams.find(t=>t.id===team1)?.name} sabotaged ${teams.find(t=>t.id===team2)?.name}`};
+    const r=await fetch('/api/submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    ok=r.ok;
+  }
+  else if(ui==='preset_1'){
+    if(presetSelected===null){toast('Select a placing!',true);return}
+    const body={game_id:selGame.id,game_name:selGame.name,team1_id:team1,points1:presetSelected,event_type:'game',day:currentDay};
+    const r=await fetch('/api/submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    ok=r.ok;
+  }
+  else if(ui==='multiplier_1'){
+    const body={game_id:selGame.id,game_name:selGame.name,team1_id:team1,points1:multValue,event_type:'game',day:currentDay,note:`${parseInt(document.getElementById('guessInput').value)||0} guesses × 20`};
+    const r=await fetch('/api/submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    ok=r.ok;
+  }
+  else{
+    // standard_1, standard_2, win_lose_2
+    const body={game_id:selGame.id,game_name:selGame.name,team1_id:team1,points1:tally1,event_type:'game',day:currentDay};
+    if(team2){body.team2_id=team2;body.points2=tally2}
+    const r=await fetch('/api/submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    ok=r.ok;
+  }
+
+  if(ok){
     toast('✓ Points submitted!');
-    tally=0; updateTally();
-    selectedGame=null; team1Id=null; team2Id=null;
+    // Reset all
+    selGame=null;team1=null;team2=null;
     document.getElementById('gameSelect').value='';
+    document.getElementById('gameDesc').style.display='none';
+    document.getElementById('nextBtn').textContent='Next →';
+    document.getElementById('nextBtn').className='btn btn-next';
+    document.getElementById('nextBtn').onclick=goNext;
     goStep(1);
-  } else { toast('Submission failed', true); }
+  } else {
+    toast('Submission failed!',true);
+  }
 }
 
-// ── Timer ──────────────────────────────────────────────
-function setTimer(m) {
-  if (timerRunning) stopTimer();
-  timerSec = m*60;
-  document.querySelectorAll('.timer-preset').forEach(el=>el.classList.remove('selected'));
-  event?.target?.classList.add('selected');
-  renderTimer();
-}
-function setCustomTimer() {
-  const v = parseInt(document.getElementById('customMin').value);
-  if (v>0) setTimer(v);
-}
-function renderTimer() {
-  const m = String(Math.floor(timerSec/60)).padStart(2,'0');
-  const s = String(timerSec%60).padStart(2,'0');
-  const el = document.getElementById('timerDisp');
-  el.textContent = m+':'+s;
-  el.className = 'timer-time'+(timerSec<=10&&timerSec>0?' danger':timerSec<=30&&timerSec>0?' warn':'');
-}
-function toggleTimer() {
-  timerRunning ? stopTimer() : startTimer();
-}
-function startTimer() {
-  if (timerSec<=0) return;
-  timerRunning=true;
-  document.getElementById('timerToggle').textContent='⏸ Pause';
-  timerInterval=setInterval(()=>{
-    timerSec--;
-    renderTimer();
-    if (timerSec<=0){stopTimer();playAlarm();}
-  },1000);
-}
-function stopTimer() {
-  timerRunning=false;
-  clearInterval(timerInterval);
-  document.getElementById('timerToggle').textContent='▶ Start';
-}
-function resetTimer() { stopTimer(); timerSec=0; renderTimer(); }
-function playAlarm() {
-  try {
-    const ctx = new AudioContext();
-    // Minion-ish jingle: playful ascending notes
-    const seq = [523,659,784,659,784,1047,784,1047];
-    let t = ctx.currentTime;
-    seq.forEach((f,i)=>{
-      const o=ctx.createOscillator(), g=ctx.createGain();
-      o.connect(g); g.connect(ctx.destination);
-      o.type=i%2===0?'square':'sawtooth';
-      o.frequency.value=f;
-      g.gain.setValueAtTime(0.25,t);
-      g.gain.exponentialRampToValueAtTime(0.001,t+0.28);
-      o.start(t); o.stop(t+0.28);
-      t+=0.22;
-    });
-  } catch(e){}
-}
-
-// ── Toast ──────────────────────────────────────────────
-function toast(msg, err) {
+function toast(msg,err){
   const el=document.getElementById('toast');
-  el.textContent=msg;
-  el.className='toast'+(err?' err':'')+' show';
+  el.textContent=msg;el.className='toast'+(err?' err':'')+' show';
   setTimeout(()=>el.className='toast'+(err?' err':''),2600);
 }
 
