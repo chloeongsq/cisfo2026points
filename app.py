@@ -18,6 +18,14 @@ USE_PG = DATABASE_URL.startswith('postgres')
 if USE_PG:
     import psycopg2
     import psycopg2.extras
+    import psycopg2.pool
+    _pg_pool = None
+
+    def _get_pool():
+        global _pg_pool
+        if _pg_pool is None:
+            _pg_pool = psycopg2.pool.ThreadedConnectionPool(1, 10, DATABASE_URL)
+        return _pg_pool
 
 clients = set()
 
@@ -27,10 +35,12 @@ class _Conn:
     """Unified wrapper: makes psycopg2 behave like sqlite3 for our query patterns."""
     def __init__(self):
         if USE_PG:
-            self._c = psycopg2.connect(DATABASE_URL)
+            self._c = _get_pool().getconn()
+            self._pooled = True
         else:
             self._c = sqlite3.connect('points.db')
             self._c.row_factory = sqlite3.Row
+            self._pooled = False
 
     def execute(self, sql, params=()):
         if USE_PG:
@@ -66,7 +76,10 @@ class _Conn:
             self._c.commit()
         else:
             self._c.rollback()
-        self._c.close()
+        if self._pooled:
+            _get_pool().putconn(self._c)  # return to pool, not close
+        else:
+            self._c.close()
 
 def get_db():
     return _Conn()
@@ -195,25 +208,22 @@ def get_setting(conn, key):
     row = conn.execute('SELECT value FROM settings WHERE key=?', (key,)).fetchone()
     return row['value'] if row else None
 
-def notify_sheets(rows):
+def notify_sheets(url, rows):
+    """Fire-and-forget POST. url is pre-fetched so no extra DB call needed."""
+    if not url or not url.startswith('http'):
+        return
     def _send():
         try:
-            with get_db() as conn:
-                url = get_setting(conn, 'sheets_webhook_url') or ''
-            if not url.startswith('http'):
-                url = os.environ.get('SHEETS_WEBHOOK_URL', '')
-            if not url.startswith('http'):
-                return
             payload = json.dumps({'events': rows}).encode()
             headers = {'Content-Type': 'application/json'}
             req = urllib.request.Request(url, data=payload, headers=headers, method='POST')
             try:
-                urllib.request.urlopen(req, timeout=6)
+                urllib.request.urlopen(req, timeout=8)
             except urllib.error.HTTPError as e:
                 if e.code in (301, 302, 303, 307, 308):
                     req2 = urllib.request.Request(
                         e.headers.get('Location', url), data=payload, headers=headers, method='POST')
-                    urllib.request.urlopen(req2, timeout=6)
+                    urllib.request.urlopen(req2, timeout=8)
         except Exception:
             pass
     threading.Thread(target=_send, daemon=True).start()
@@ -332,8 +342,9 @@ def submit_points():
             FROM events e JOIN teams t1 ON e.team1_id=t1.id
             LEFT JOIN teams t2 ON e.team2_id=t2.id WHERE e.id=?
         ''', (event_id,)).fetchone())
+        sheets_url = get_setting(conn, 'sheets_webhook_url') or os.environ.get('SHEETS_WEBHOOK_URL', '')
     broadcast({'type': 'update', 'teams': teams, 'latest_event': ev})
-    notify_sheets([{
+    notify_sheets(sheets_url, [{
         'timestamp': now, 'game_name': data['game_name'],
         'team1_id': data['team1_id'], 'points1': int(data['points1']),
         'team2_id': data.get('team2_id', ''), 'points2': int(data.get('points2', 0)),
@@ -361,8 +372,9 @@ def submit_batch():
                   int(data.get('day', 1)), now))
         recalc_totals(conn)
         teams = [dict(t) for t in conn.execute('SELECT * FROM teams ORDER BY total_points DESC').fetchall()]
+        sheets_url = get_setting(conn, 'sheets_webhook_url') or os.environ.get('SHEETS_WEBHOOK_URL', '')
     broadcast({'type': 'update', 'teams': teams, 'latest_event': None})
-    notify_sheets([{
+    notify_sheets(sheets_url, [{
         'timestamp': now, 'game_name': d['game_name'],
         'team1_id': d['team1_id'], 'points1': int(d['points1']),
         'team2_id': d.get('team2_id', ''), 'points2': int(d.get('points2', 0)),
