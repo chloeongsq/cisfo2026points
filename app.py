@@ -2,6 +2,9 @@ import sqlite3
 import json
 import uuid
 import os
+import threading
+import urllib.request
+import urllib.error
 from datetime import datetime
 from flask import Flask, request, jsonify, send_from_directory
 from flask_sock import Sock
@@ -92,16 +95,19 @@ def init_db():
         # Re-seed games (always refresh from source of truth)
         conn.execute('DELETE FROM games')
         games = [
-            # Day 1 — Vivo Rooftop (dry weather)
+            # Day 1 — Vivo Rooftop
             ('g_spot',    'Spot the Difference',    2, 'game', 1, 'Vivo Rooftop',   'win_lose_2',   '{"win":150,"lose":50}'),
             ('g_jigsaw',  'Jigsaw Puzzle',           2, 'game', 1, 'Vivo Rooftop',   'win_lose_2',   '{"win":150,"lose":50}'),
             ('g_song',    'Guess the Song',          2, 'game', 1, 'Vivo Rooftop',   'win_lose_2',   '{"win":150,"lose":50}'),
-            ('g_mrt',     'MRT Line Game',           1, 'game', 1, 'Vivo Rooftop',   'preset_1',     '{"presets":[400,300,200,100],"labels":["1st","2nd","3rd","4th"]}'),
-            # Day 1 — Sensory Scape (wet weather)
-            ('g_wet',     'Wet Weather Game',        1, 'game', 1, 'Sensory Scape',  'preset_1',     '{"presets":[100,50],"labels":["1st","2nd"]}'),
+            ('g_mrt',     'MRT Line Game',           7, 'game', 1, 'Vivo Rooftop',   'relay',        '{"places":[400,300,200,100]}'),
+            # Day 1 — Sensory Scape
+            ('g_mafia',   'Mafia',                   1, 'game', 1, 'Sensory Scape',  'preset_1',     '{"presets":[250],"labels":["Winner — 250 pts"]}'),
+            ('g_imposter','Imposter Game',            1, 'game', 1, 'Sensory Scape',  'preset_1',     '{"presets":[250],"labels":["Winner — 250 pts"]}'),
+            ('g_guesswho','Guess Who',               1, 'game', 1, 'Sensory Scape',  'preset_1',     '{"presets":[250],"labels":["Winner — 250 pts"]}'),
+            ('g_cards',   'Writing of Cards',        1, 'game', 1, 'Sensory Scape',  'preset_1',     '{"presets":[250],"labels":["Winner — 250 pts"]}'),
             # Day 1 — Beach Games
             ('g_captball','Captain\'s Ball',         2, 'game', 1, 'Beach',          'captains_ball','{"win":250}'),
-            ('g_splash',  'Splash Ball Race',        2, 'game', 1, 'Beach',          'splash_ball',  '{"rounds":3,"win_per_round":250}'),
+            ('g_splash',  'Splash Ball Race',        2, 'game', 1, 'Beach',          'captains_ball','{"win":250}'),
             ('g_bandana', 'Bandana Pull',            2, 'game', 1, 'Beach',          'win_lose_2',   '{"win":250,"lose":0}'),
             ('g_charades','Handicap Charades',       1, 'game', 1, 'Beach',          'multiplier_1', '{"multiplier":20}'),
             ('g_relay',   'Relay Race',              7, 'game', 1, 'Beach',          'relay',        '{"places":[400,300,200,100]}'),
@@ -111,12 +117,7 @@ def init_db():
             ('g_movie',   'Movie Jeopardy',          2, 'game', 2, 'School',         'standard_2',   '{}'),
             ('g_coney',   'Coney',                   1, 'game', 2, 'School',         'standard_1',   '{}'),
             # Day 2 — Scavenger Hunt
-            ('g_scav',    'Scavenger Hunt',          7, 'game', 2, 'Scavenger Hunt', 'scavenger',    '{"tiers":[20,50,100,200,500]}'),
-            # Misc
-            ('g_penalty', 'Penalty',                 1, 'misc', 0, '',               'standard_1',   '{}'),
-            ('g_wild',    'Wild Card',               1, 'misc', 0, '',               'standard_1',   '{}'),
-            ('g_bonus',   'Bonus Points',            1, 'misc', 0, '',               'standard_1',   '{}'),
-            ('g_sabotage','Sabotage',                2, 'sabotage', 0, '',           'sabotage',     '{"win":50,"lose":-50}'),
+            ('g_scav',    'Scavenger Hunt',          1, 'game', 2, 'Scavenger Hunt', 'standard_1',   '{}'),
         ]
         conn.executemany('INSERT INTO games VALUES (?,?,?,?,?,?,?,?)', games)
 
@@ -155,6 +156,22 @@ def get_teams_data(conn, day=None):
 def get_setting(conn, key):
     row = conn.execute('SELECT value FROM settings WHERE key=?', (key,)).fetchone()
     return row['value'] if row else None
+
+def notify_sheets(rows):
+    """Fire-and-forget POST to Google Sheets webhook (if configured)."""
+    def _send():
+        try:
+            with get_db() as conn:
+                url = get_setting(conn, 'sheets_webhook_url')
+            if not url or not url.startswith('http'):
+                return
+            payload = json.dumps({'events': rows}).encode()
+            req = urllib.request.Request(url, data=payload,
+                headers={'Content-Type': 'application/json'}, method='POST')
+            urllib.request.urlopen(req, timeout=6)
+        except Exception:
+            pass
+    threading.Thread(target=_send, daemon=True).start()
 
 @sock.route('/ws')
 def websocket(ws):
@@ -264,6 +281,12 @@ def submit_points():
             LEFT JOIN teams t2 ON e.team2_id=t2.id WHERE e.id=?
         ''', (event_id,)).fetchone())
     broadcast({'type': 'update', 'teams': teams, 'latest_event': ev})
+    notify_sheets([{
+        'timestamp': now, 'game_name': data['game_name'],
+        'team1_id': data['team1_id'], 'points1': int(data['points1']),
+        'team2_id': data.get('team2_id',''), 'points2': int(data.get('points2',0)),
+        'day': day, 'note': data.get('note',''), 'event_type': data.get('event_type','game')
+    }])
     return jsonify({'ok': True})
 
 @app.route('/api/submit-batch', methods=['POST'])
@@ -287,6 +310,12 @@ def submit_batch():
         recalc_totals(conn)
         teams = [dict(t) for t in conn.execute('SELECT * FROM teams ORDER BY total_points DESC').fetchall()]
     broadcast({'type': 'update', 'teams': teams, 'latest_event': None})
+    notify_sheets([{
+        'timestamp': now, 'game_name': d['game_name'],
+        'team1_id': d['team1_id'], 'points1': int(d['points1']),
+        'team2_id': d.get('team2_id',''), 'points2': int(d.get('points2',0)),
+        'day': int(d.get('day',1)), 'note': d.get('note',''), 'event_type': d.get('event_type','game')
+    } for d in events if int(d.get('points1',0))!=0 or int(d.get('points2',0))!=0])
     return jsonify({'ok': True})
 
 @app.route('/api/teams/<team_id>', methods=['PATCH'])
