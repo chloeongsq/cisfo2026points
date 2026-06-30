@@ -714,7 +714,7 @@ function goNext(){
   if(currentStep===1){
     if(!selGame){toast('Select a game first!',true);return}
     setupStep2();
-    goStep(2);
+    if(currentStep===1) goStep(2);
   } else if(currentStep===2){
     if(!validateStep2()) return;
     setupStep3();
