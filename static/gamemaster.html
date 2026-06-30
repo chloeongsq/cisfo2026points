@@ -555,13 +555,13 @@ select optgroup{color:var(--muted);font-size:0.8rem}
         </div>
       </div>
 
-      <!-- relay: assign places -->
+      <!-- relay: team + points dropdowns -->
       <div id="ui_relay" style="display:none">
         <div class="card">
-          <span class="lbl">🏃 Assign Places</span>
+          <span class="lbl">🏃 Assign Teams & Points</span>
           <div class="relay-list" id="relayList"></div>
           <div style="font-size:0.75rem;color:var(--muted);margin-top:10px;text-align:center">
-            Teams not placed receive 0 points
+            Leave blank for teams not placing
           </div>
         </div>
       </div>
@@ -880,18 +880,22 @@ function setupStep3(){
   else if(ui==='relay'){
     document.getElementById('ui_relay').style.display='block';
     const places=cfg.places||[400,300,200,100];
-    const medals=['🥇','🥈','🥉','4️⃣'];
-    document.getElementById('relayList').innerHTML=places.map((p,i)=>`
+    const teamOpts=`<option value="">— Team —</option>${teams.map(t=>`<option value="${t.id}">${t.emoji} ${t.name.replace('-verse','')}</option>`).join('')}`;
+    const ptsOpts=places.map(p=>`<option value="${p}">${p} pts</option>`).join('');
+    document.getElementById('relayList').innerHTML=places.map((_,i)=>`
       <div class="relay-row">
-        <div class="relay-place">${medals[i]||i+1}</div>
-        <div class="relay-pts">${p} pts</div>
-        <div class="relay-select sel-wrap">
-          <select onchange="setRelayPlace(${i+1},this.value)">
-            <option value="">— Select —</option>
-            ${teams.map(t=>`<option value="${t.id}">${t.emoji} ${t.name.replace('-verse','')}</option>`).join('')}
+        <div style="font-size:0.75rem;color:var(--muted);min-width:28px;text-align:center">${i+1}.</div>
+        <div class="relay-select sel-wrap" style="flex:2">
+          <select onchange="setRelayTeam(${i},this.value)">${teamOpts}</select>
+        </div>
+        <div class="relay-select sel-wrap" style="flex:1">
+          <select onchange="setRelayPts(${i},this.value)">
+            <option value="">— Pts —</option>
+            ${ptsOpts}
           </select>
         </div>
       </div>`).join('');
+    relayPlaces={};
   }
   else if(ui==='scavenger'){
     document.getElementById('ui_scavenger').style.display='block';
@@ -997,12 +1001,14 @@ function updateSplashSummary(){
     `${t1?.emoji} ${w1} round(s) = <strong>${w1*ppr} pts</strong><br>${t2?.emoji} ${w2} round(s) = <strong>${w2*ppr} pts</strong>`;
 }
 
-function setRelayPlace(place, teamId){
-  // Remove this team from other places
-  for(const k of Object.keys(relayPlaces)){
-    if(relayPlaces[k]===teamId) delete relayPlaces[k];
-  }
-  if(teamId) relayPlaces[place]=teamId;
+function setRelayTeam(i, teamId){
+  if(!relayPlaces[i]) relayPlaces[i]={teamId:'',pts:0};
+  relayPlaces[i].teamId=teamId;
+  updateSummary();
+}
+function setRelayPts(i, pts){
+  if(!relayPlaces[i]) relayPlaces[i]={teamId:'',pts:0};
+  relayPlaces[i].pts=parseInt(pts)||0;
   updateSummary();
 }
 
@@ -1038,13 +1044,12 @@ async function submitPoints(){
   let ok=false;
 
   if(ui==='relay'){
-    const places=cfg.places||[400,300,200,100];
     const evs=[];
-    for(let i=0;i<places.length;i++){
-      const tid=relayPlaces[i+1];
-      if(tid) evs.push({game_id:selGame.id,game_name:selGame.name,team1_id:tid,points1:places[i],event_type:'game',day:currentDay,note:`Place ${i+1}`});
+    for(const[i,row] of Object.entries(relayPlaces)){
+      if(row.teamId && row.pts>0)
+        evs.push({game_id:selGame.id,game_name:selGame.name,team1_id:row.teamId,points1:row.pts,event_type:'game',day:currentDay,note:`Row ${+i+1}`});
     }
-    if(!evs.length){toast('Assign at least one place!',true);return}
+    if(!evs.length){toast('Assign at least one team and points!',true);return}
     const r=await fetch('/api/submit-batch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({events:evs})});
     ok=r.ok;
   }
