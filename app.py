@@ -151,7 +151,7 @@ def init_db():
             ('g_spot',    'Spot the Difference',    2, 'game', 1, 'Vivo Rooftop',  'win_lose_2',   '{"win":150,"lose":50}'),
             ('g_jigsaw',  'Jigsaw Puzzle',           2, 'game', 1, 'Vivo Rooftop',  'win_lose_2',   '{"win":150,"lose":50}'),
             ('g_song',    'Guess the Song',          2, 'game', 1, 'Vivo Rooftop',  'win_lose_2',   '{"win":150,"lose":50}'),
-            ('g_mrt',     'MRT Line Game',           7, 'game', 1, 'Vivo Rooftop',  'relay',        '{"places":[400,300,200,100]}'),
+            ('g_mrt',     'MRT Line Game',           1, 'game', 1, 'Vivo Rooftop',  'multiplier_1', '{"multiplier":2,"label":"Score"}'),
             # Day 1 — Sensory Scape
             ('g_mafia',   'Mafia',                   1, 'game', 1, 'Sensory Scape', 'preset_1',     '{"presets":[250],"labels":["Winner — 250 pts"]}'),
             ('g_imposter','Imposter Game',            1, 'game', 1, 'Sensory Scape', 'preset_1',     '{"presets":[250],"labels":["Winner — 250 pts"]}'),
@@ -161,7 +161,7 @@ def init_db():
             ('g_captball',"Captain's Ball",          2, 'game', 1, 'Beach',         'captains_ball','{"win":250}'),
             ('g_splash',  'Splash Ball Race',        2, 'game', 1, 'Beach',         'captains_ball','{"win":250}'),
             ('g_bandana', 'Bandana Pull',            2, 'game', 1, 'Beach',         'win_lose_2',   '{"win":250,"lose":0}'),
-            ('g_charades','Handicap Charades',       1, 'game', 1, 'Beach',         'multiplier_1', '{"multiplier":20}'),
+            ('g_charades','Handicap Charades',       1, 'game', 1, 'Beach',         'multiplier_1', '{"multiplier":20,"label":"Correct Guesses"}'),
             ('g_relay',   'Relay Race',              7, 'game', 1, 'Beach',         'relay',        '{"places":[400,300,200,100]}'),
             # Day 2 — School
             ('g_police',  'Police Sketch Pictionary',2, 'game', 2, 'School',        'standard_2',   '{}'),
