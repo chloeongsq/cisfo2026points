@@ -800,9 +800,11 @@ function setupStep3(){
   if(ui==='win_lose_2'){
     document.getElementById('ui_win_lose_2').style.display='block';
     const win=cfg.win||0, lose=cfg.lose??0;
+    const tie=Math.floor((win+lose)/2);
     document.getElementById('wlRow').innerHTML=`
       <button class="wl-btn win-a" onclick="setWinLose(1)">🏆 ${t1?.emoji} ${t1?.name.replace('-verse','')} Wins</button>
-      <button class="wl-btn win-b" onclick="setWinLose(2)">🏆 ${t2?.emoji} ${t2?.name.replace('-verse','')} Wins</button>`;
+      <button class="wl-btn win-b" onclick="setWinLose(2)">🏆 ${t2?.emoji} ${t2?.name.replace('-verse','')} Wins</button>
+      <button class="wl-btn" style="flex:1;border-color:rgba(251,191,36,0.4);color:#fbbf24" onclick="setWinLose(0)">🤝 Tie (${tie} pts each)</button>`;
     document.getElementById('wlCols').innerHTML=`
       <div>
         <div class="col-header" style="color:${t1?.color}">${t1?.emoji} ${t1?.name.replace('-verse','')}</div>
@@ -942,10 +944,13 @@ function updateTally2Display(){
 function setWinLose(winner){
   const cfg=JSON.parse(selGame.config||'{}');
   const win=cfg.win||0, lose=cfg.lose??0;
-  tally1=winner===1?win:lose;
-  tally2=winner===2?win:lose;
+  const tie=Math.floor((win+lose)/2);
+  if(winner===0){tally1=tie;tally2=tie;}
+  else{tally1=winner===1?win:lose;tally2=winner===2?win:lose;}
   document.querySelectorAll('.wl-btn').forEach(el=>el.classList.remove('sel'));
-  document.querySelectorAll('.wl-btn')[winner-1].classList.add('sel');
+  const btns=document.querySelectorAll('.wl-btn');
+  if(winner===0)btns[2]?.classList.add('sel');
+  else btns[winner-1]?.classList.add('sel');
   const e1=document.getElementById('wlTally1'),e2=document.getElementById('wlTally2');
   if(e1){e1.textContent=(tally1>0?'+':'')+tally1;e1.className='tally-val'+(tally1>0?' pos':tally1<0?' neg':' zero')}
   if(e2){e2.textContent=(tally2>0?'+':'')+tally2;e2.className='tally-val'+(tally2>0?' pos':tally2<0?' neg':' zero')}
@@ -978,10 +983,13 @@ function updateCBDisplay(){
   document.getElementById('cb_scoreB').textContent=cbScoreB;
   const t1=teams.find(t=>t.id===team1);
   const t2=teams.find(t=>t.id===team2);
+  const cfg=JSON.parse(selGame?.config||'{}');
+  const win=cfg.win||250;
+  const tie=Math.floor(win/2);
   const res=document.getElementById('cbResult');
-  if(cbScoreA>cbScoreB) res.textContent=`${t1?.emoji} ${t1?.name.replace('-verse','')} leads → wins 250 pts!`;
-  else if(cbScoreB>cbScoreA) res.textContent=`${t2?.emoji} ${t2?.name.replace('-verse','')} leads → wins 250 pts!`;
-  else res.textContent='Tied — first goal wins 250 pts!';
+  if(cbScoreA>cbScoreB) res.textContent=`${t1?.emoji} ${t1?.name.replace('-verse','')} leads → wins ${win} pts!`;
+  else if(cbScoreB>cbScoreA) res.textContent=`${t2?.emoji} ${t2?.name.replace('-verse','')} leads → wins ${win} pts!`;
+  else res.textContent=`🤝 Tied — submit for ${tie} pts each`;
 }
 
 function pickRound(round, teamIdx){
@@ -1073,9 +1081,11 @@ async function submitPoints(){
   }
   else if(ui==='captains_ball'){
     const win=cfg.win||250;
+    const tie=Math.floor(win/2);
     let p1=0,p2=0;
-    if(cbScoreA>cbScoreB) p1=win; else if(cbScoreB>cbScoreA) p2=win;
-    else{toast('Scores are tied — no winner yet!',true);return}
+    if(cbScoreA>cbScoreB) p1=win;
+    else if(cbScoreB>cbScoreA) p2=win;
+    else{p1=tie;p2=tie;}
     const body={game_id:selGame.id,game_name:selGame.name,team1_id:team1,team2_id:team2,points1:p1,points2:p2,event_type:'game',day:currentDay,note:`${cbScoreA}-${cbScoreB} goals`};
     const r=await fetch('/api/submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     ok=r.ok;
