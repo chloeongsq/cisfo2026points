@@ -509,14 +509,14 @@ select optgroup{color:var(--muted);font-size:0.8rem}
         <div class="preset-list" id="presetList"></div>
       </div>
 
-      <!-- multiplier_1: handicap charades -->
+      <!-- multiplier_1: counter × multiplier (label set dynamically) -->
       <div id="ui_multiplier_1" class="card" style="display:none">
-        <span class="lbl">Number of Correct Guesses</span>
-        <input type="number" id="guessInput" min="0" placeholder="e.g. 7"
+        <span class="lbl" id="multLbl">Score</span>
+        <input type="number" id="guessInput" min="0" placeholder="0"
           oninput="updateMultiplier()"
           style="width:100%;background:rgba(0,0,0,0.4);border:1.5px solid var(--border);color:var(--text);padding:16px;border-radius:12px;font-size:1.5rem;font-family:'Orbitron',monospace;outline:none;text-align:center;font-weight:900"/>
         <div class="multiplier-display">
-          <div class="mult-equation" id="multEq">0 × 20 pts = </div>
+          <div class="mult-equation" id="multEq">0 × 2 pts = </div>
           <div class="mult-result" id="multResult">0 pts</div>
         </div>
       </div>
@@ -855,6 +855,7 @@ function setupStep3(){
   else if(ui==='multiplier_1'){
     document.getElementById('ui_multiplier_1').style.display='block';
     document.getElementById('guessInput').value='';
+    document.getElementById('multLbl').textContent=cfg.label||'Score';
     updateMultiplier();
   }
   else if(ui==='captains_ball'){
@@ -956,8 +957,9 @@ function selectPreset(pts, btn){
 
 function updateMultiplier(){
   const v=parseInt(document.getElementById('guessInput').value)||0;
-  multValue=v*20;
-  document.getElementById('multEq').textContent=`${v} × 20 pts =`;
+  const mult=JSON.parse(selGame?.config||'{}').multiplier||1;
+  multValue=v*mult;
+  document.getElementById('multEq').textContent=`${v} × ${mult} pts =`;
   document.getElementById('multResult').textContent=`${multValue} pts`;
   updateSummary();
 }
