@@ -10,40 +10,68 @@
   --bg:#0a0a1a;--card:rgba(255,255,255,0.06);--border:rgba(255,255,255,0.12);
   --text:#f0f0ff;--muted:#8888aa;--accent:#a78bfa;--green:#4ade80;--red:#f87171;
 }
-body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+body{
+  background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   min-height:100vh;padding:0 0 40px;
-  background-image:radial-gradient(ellipse at 20% 20%,rgba(100,50,200,0.15) 0%,transparent 60%),
+  background-image:
+    radial-gradient(ellipse at 20% 20%,rgba(100,50,200,0.15) 0%,transparent 60%),
     radial-gradient(ellipse at 80% 80%,rgba(50,100,200,0.12) 0%,transparent 60%);
 }
 header{
   text-align:center;padding:28px 20px 20px;
-  border-bottom:1px solid var(--border);
-  background:rgba(0,0,0,0.3);
+  border-bottom:1px solid var(--border);background:rgba(0,0,0,0.3);
 }
-header h1{font-size:1.5rem;font-weight:800;letter-spacing:0.03em;
+header h1{
+  font-size:1.5rem;font-weight:800;letter-spacing:0.03em;
   background:linear-gradient(135deg,#f0c040,#c084fc,#60a5fa);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
 header p{color:var(--muted);font-size:0.8rem;margin-top:4px}
 main{max-width:480px;margin:0 auto;padding:20px 16px;display:flex;flex-direction:column;gap:16px}
 
 .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px}
 .card-title{font-size:0.7rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:14px}
 
+.clan-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.clan-btn{
+  display:flex;align-items:center;gap:8px;
+  padding:12px 14px;border-radius:12px;
+  border:2px solid var(--border);background:rgba(0,0,0,0.3);
+  color:var(--text);font-size:0.88rem;font-weight:600;cursor:pointer;
+  transition:all 0.15s;text-align:left;
+}
+.clan-btn:hover{border-color:rgba(255,255,255,0.3);background:rgba(255,255,255,0.06)}
+.clan-emoji{font-size:1.1rem}
+
+.select-row{display:flex;gap:8px;margin-bottom:12px}
+.sel-btn{
+  flex:1;padding:8px;border-radius:8px;border:1px solid var(--border);
+  background:rgba(255,255,255,0.04);color:var(--muted);
+  font-size:0.78rem;cursor:pointer;transition:background 0.15s;
+}
+.sel-btn:hover{background:rgba(255,255,255,0.08);color:var(--text)}
+
+.selection-info{
+  font-size:0.78rem;color:var(--muted);text-align:center;
+  padding:8px;background:rgba(0,0,0,0.2);border-radius:8px;margin-bottom:14px;
+}
+.selection-info span{color:var(--accent);font-weight:600}
+
 label{display:block;font-size:0.75rem;color:var(--muted);margin-bottom:6px}
-select,input[type=number]{
+input[type=number]{
   width:100%;background:rgba(0,0,0,0.4);border:1.5px solid var(--border);
-  border-radius:10px;color:var(--text);font-size:0.95rem;padding:12px 14px;
+  border-radius:10px;color:var(--text);font-size:1rem;padding:12px 14px;
   outline:none;-webkit-appearance:none;appearance:none;
 }
-select:focus,input[type=number]:focus{border-color:var(--accent)}
-.field{margin-bottom:14px}
-.field:last-child{margin-bottom:0}
+input[type=number]:focus{border-color:var(--accent)}
 
 .quick-btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-.qb{flex:1;min-width:60px;padding:8px 6px;border-radius:8px;border:1px solid var(--border);
-  background:rgba(255,255,255,0.04);color:var(--text);font-size:0.82rem;cursor:pointer;
-  transition:background 0.15s}
-.qb:hover{background:rgba(255,255,255,0.1)}
+.qb{
+  flex:1;min-width:60px;padding:8px 6px;border-radius:8px;
+  border:1px solid var(--border);background:rgba(255,255,255,0.04);
+  color:var(--text);font-size:0.82rem;cursor:pointer;transition:background 0.15s;
+}
 .qb.pos{border-color:rgba(74,222,128,0.4);color:var(--green)}
 .qb.neg{border-color:rgba(248,113,113,0.4);color:var(--red)}
 .qb.pos:hover{background:rgba(74,222,128,0.1)}
@@ -51,7 +79,7 @@ select:focus,input[type=number]:focus{border-color:var(--accent)}
 
 .submit-btn{
   width:100%;padding:14px;border-radius:12px;border:none;cursor:pointer;
-  font-size:1rem;font-weight:700;letter-spacing:0.03em;
+  font-size:1rem;font-weight:700;
   background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;
   transition:opacity 0.2s,transform 0.1s;margin-top:16px;
 }
@@ -79,7 +107,7 @@ select:focus,input[type=number]:focus{border-color:var(--accent)}
   font-size:0.78rem;color:var(--muted);
   background:rgba(0,0,0,0.2);border-radius:8px;padding:8px 12px;
 }
-.log-delta{font-weight:700;min-width:48px}
+.log-delta{font-weight:700;min-width:52px}
 .log-delta.pos{color:var(--green)}
 .log-delta.neg{color:var(--red)}
 .log-who{flex:1}
@@ -94,8 +122,6 @@ select:focus,input[type=number]:focus{border-color:var(--accent)}
 .toast.show{opacity:1}
 .toast.ok{border-color:var(--green);color:var(--green)}
 .toast.err{border-color:var(--red);color:var(--red)}
-
-#exceptSection{display:none;margin-top:12px}
 </style>
 </head>
 <body>
@@ -105,56 +131,28 @@ select:focus,input[type=number]:focus{border-color:var(--accent)}
 </header>
 
 <main>
-  <!-- Input card -->
   <div class="card">
-    <div class="card-title">Adjust Points</div>
-
-    <div class="field">
-      <label>Clan</label>
-      <select id="clanSelect" onchange="onClanChange()">
-        <option value="">— Select Clan —</option>
-        <option value="mystery">💛 Mystery-verse</option>
-        <option value="sky">🩵 Sky-verse</option>
-        <option value="crimson">❤️ Crimson-verse</option>
-        <option value="shadow">🖤 Shadow-verse</option>
-        <option value="tech">💙 Tech-verse</option>
-        <option value="nova">🩷 Nova-verse</option>
-        <option value="chaos">💜 Chaos-verse</option>
-        <option value="everyone">🌍 Everyone</option>
-        <option value="except">🚫 Everyone except...</option>
-      </select>
+    <div class="card-title">Select Clans</div>
+    <div class="clan-grid" id="clanGrid"></div>
+    <div class="select-row">
+      <button class="sel-btn" onclick="selectAll()">✓ Select All</button>
+      <button class="sel-btn" onclick="selectNone()">✕ Deselect All</button>
     </div>
+    <div class="selection-info" id="selectionInfo">No clans selected</div>
 
-    <div id="exceptSection" class="field">
-      <label>Exclude which clan?</label>
-      <select id="exceptSelect">
-        <option value="mystery">💛 Mystery-verse</option>
-        <option value="sky">🩵 Sky-verse</option>
-        <option value="crimson">❤️ Crimson-verse</option>
-        <option value="shadow">🖤 Shadow-verse</option>
-        <option value="tech">💙 Tech-verse</option>
-        <option value="nova">🩷 Nova-verse</option>
-        <option value="chaos">💜 Chaos-verse</option>
-      </select>
+    <label>Points Change</label>
+    <input type="number" id="deltaInput" placeholder="e.g. 100 or -100">
+    <div class="quick-btns">
+      <button class="qb pos" onclick="setDelta(50)">+50</button>
+      <button class="qb pos" onclick="setDelta(100)">+100</button>
+      <button class="qb pos" onclick="setDelta(200)">+200</button>
+      <button class="qb neg" onclick="setDelta(-50)">−50</button>
+      <button class="qb neg" onclick="setDelta(-100)">−100</button>
+      <button class="qb neg" onclick="setDelta(-200)">−200</button>
     </div>
-
-    <div class="field">
-      <label>Points Change</label>
-      <input type="number" id="deltaInput" placeholder="e.g. 100 or -100">
-      <div class="quick-btns">
-        <button class="qb pos" onclick="setDelta(50)">+50</button>
-        <button class="qb pos" onclick="setDelta(100)">+100</button>
-        <button class="qb pos" onclick="setDelta(200)">+200</button>
-        <button class="qb neg" onclick="setDelta(-50)">−50</button>
-        <button class="qb neg" onclick="setDelta(-100)">−100</button>
-        <button class="qb neg" onclick="setDelta(-200)">−200</button>
-      </div>
-    </div>
-
     <button class="submit-btn" onclick="submitAdjust()">Apply Points</button>
   </div>
 
-  <!-- Scoreboard -->
   <div class="card">
     <div class="card-title">Current Standings</div>
     <div class="scoreboard" id="scoreboard">
@@ -162,7 +160,6 @@ select:focus,input[type=number]:focus{border-color:var(--accent)}
     </div>
   </div>
 
-  <!-- Log -->
   <div class="card">
     <div class="card-title">Recent Adjustments</div>
     <div class="log-list" id="logList">
@@ -175,70 +172,89 @@ select:focus,input[type=number]:focus{border-color:var(--accent)}
 
 <script>
 const ALL_CLANS = [
-  {id:'mystery',name:'Mystery-verse',emoji:'💛'},
-  {id:'sky',    name:'Sky-verse',    emoji:'🩵'},
-  {id:'crimson',name:'Crimson-verse',emoji:'❤️'},
-  {id:'shadow', name:'Shadow-verse', emoji:'🖤'},
-  {id:'tech',   name:'Tech-verse',   emoji:'💙'},
-  {id:'nova',   name:'Nova-verse',   emoji:'🩷'},
-  {id:'chaos',  name:'Chaos-verse',  emoji:'💜'},
+  {id:'mystery', name:'Mystery-verse', emoji:'💛', color:'#FFD700'},
+  {id:'sky',     name:'Sky-verse',     emoji:'🩵', color:'#87CEEB'},
+  {id:'crimson', name:'Crimson-verse', emoji:'❤️', color:'#DC143C'},
+  {id:'shadow',  name:'Shadow-verse',  emoji:'🖤', color:'#64748B'},
+  {id:'tech',    name:'Tech-verse',    emoji:'💙', color:'#2563EB'},
+  {id:'nova',    name:'Nova-verse',    emoji:'🩷', color:'#EC4899'},
+  {id:'chaos',   name:'Chaos-verse',   emoji:'💜', color:'#A855F7'},
 ];
 
+let selected = new Set();
 let recentLog = [];
 
-function onClanChange(){
-  const v = document.getElementById('clanSelect').value;
-  document.getElementById('exceptSection').style.display = v==='except' ? 'block' : 'none';
+// Build clan buttons
+document.getElementById('clanGrid').innerHTML = ALL_CLANS.map(c=>`
+  <button class="clan-btn" id="cbtn_${c.id}" onclick="toggleClan('${c.id}')">
+    <span class="clan-emoji">${c.emoji}</span>
+    <span>${c.name}</span>
+  </button>`).join('');
+
+function toggleClan(id){
+  if(selected.has(id)) selected.delete(id);
+  else selected.add(id);
+  updateClanUI();
 }
 
-function setDelta(n){
-  document.getElementById('deltaInput').value = n;
-}
+function selectAll(){ ALL_CLANS.forEach(c=>selected.add(c.id)); updateClanUI(); }
+function selectNone(){ selected.clear(); updateClanUI(); }
 
-function resolveClanIds(){
-  const v = document.getElementById('clanSelect').value;
-  if(!v) return null;
-  if(v === 'everyone') return ALL_CLANS.map(c=>c.id);
-  if(v === 'except'){
-    const ex = document.getElementById('exceptSelect').value;
-    return ALL_CLANS.filter(c=>c.id!==ex).map(c=>c.id);
+function updateClanUI(){
+  ALL_CLANS.forEach(c=>{
+    const btn = document.getElementById('cbtn_'+c.id);
+    if(selected.has(c.id)){
+      btn.classList.add('selected');
+      btn.style.borderColor = c.color;
+      btn.style.boxShadow = `0 0 12px ${c.color}55`;
+      btn.style.background = c.color+'22';
+    } else {
+      btn.classList.remove('selected');
+      btn.style.borderColor = '';
+      btn.style.boxShadow = '';
+      btn.style.background = '';
+    }
+  });
+
+  const info = document.getElementById('selectionInfo');
+  if(selected.size === 0){
+    info.innerHTML = 'No clans selected';
+  } else if(selected.size === ALL_CLANS.length){
+    info.innerHTML = '<span>All 7 clans</span> selected';
+  } else {
+    const emojis = ALL_CLANS.filter(c=>selected.has(c.id)).map(c=>c.emoji).join(' ');
+    info.innerHTML = `<span>${emojis}</span> — ${selected.size} clan${selected.size>1?'s':''} selected`;
   }
-  return [v];
 }
 
-function labelForSelection(){
-  const v = document.getElementById('clanSelect').value;
-  if(v==='everyone') return 'Everyone';
-  if(v==='except'){
-    const ex = document.getElementById('exceptSelect').value;
-    const clan = ALL_CLANS.find(c=>c.id===ex);
-    return `Everyone except ${clan?.emoji} ${clan?.name}`;
-  }
-  const clan = ALL_CLANS.find(c=>c.id===v);
-  return clan ? `${clan.emoji} ${clan.name}` : '';
-}
+function setDelta(n){ document.getElementById('deltaInput').value = n; }
 
 async function submitAdjust(){
-  const clan_ids = resolveClanIds();
-  if(!clan_ids){ toast('Select a clan first!', true); return; }
+  if(selected.size === 0){ toast('Select at least one clan!', true); return; }
   const delta = parseInt(document.getElementById('deltaInput').value);
   if(!delta || isNaN(delta)){ toast('Enter a points value!', true); return; }
+
+  const clan_ids = [...selected];
+  const label = selected.size === ALL_CLANS.length
+    ? 'Everyone'
+    : ALL_CLANS.filter(c=>selected.has(c.id)).map(c=>`${c.emoji} ${c.name}`).join(', ');
 
   const btn = document.querySelector('.submit-btn');
   btn.disabled = true;
   try {
     const r = await fetch('/api/battle/adjust', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({clan_ids, delta, note: labelForSelection()})
+      body: JSON.stringify({clan_ids, delta, note: label})
     });
     const j = await r.json();
     if(r.ok){
-      recentLog.unshift({label: labelForSelection(), delta, time: new Date().toLocaleTimeString()});
+      recentLog.unshift({label, delta, time: new Date().toLocaleTimeString()});
       if(recentLog.length > 8) recentLog.pop();
       renderScoreboard(j.clans);
       renderLog();
       toast(delta>0 ? `+${delta} applied ✓` : `${delta} applied ✓`, false);
       document.getElementById('deltaInput').value = '';
+      selectNone();
     } else {
       toast('Error!', true);
     }
@@ -259,12 +275,13 @@ function renderScoreboard(clans){
 
 function renderLog(){
   if(!recentLog.length){
-    document.getElementById('logList').innerHTML = '<div style="color:var(--muted);font-size:0.8rem;text-align:center;padding:10px">None yet</div>';
+    document.getElementById('logList').innerHTML =
+      '<div style="color:var(--muted);font-size:0.8rem;text-align:center;padding:10px">None yet</div>';
     return;
   }
   document.getElementById('logList').innerHTML = recentLog.map(r=>`
     <div class="log-row">
-      <div class="log-delta ${r.delta>0?'pos':'neg'}">${r.delta>0?'+':''}${r.delta}</div>
+      <div class="log-delta ${r.delta>0?'pos':'neg'}">${r.delta>0?'+':''}${r.delta} pts</div>
       <div class="log-who">${r.label}</div>
       <div class="log-time">${r.time}</div>
     </div>`).join('');
@@ -274,20 +291,22 @@ let toastTimer;
 function toast(msg, isErr=false){
   const el = document.getElementById('toast');
   el.textContent = msg;
-  el.className = 'toast show ' + (isErr?'err':'ok');
+  el.className = 'toast show '+(isErr?'err':'ok');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(()=>{ el.className='toast'; }, 2000);
 }
 
-// Initial load
 fetch('/api/battle/totals').then(r=>r.json()).then(renderScoreboard);
 
-// Live WebSocket
-const ws = new WebSocket(`${location.protocol==='https:'?'wss':'ws'}://${location.host}/ws/battle`);
-ws.onmessage = e => {
-  const d = JSON.parse(e.data);
-  if(d.type==='update') renderScoreboard(d.clans);
-};
+function connectWS(){
+  const ws = new WebSocket(`${location.protocol==='https:'?'wss':'ws'}://${location.host}/ws/battle`);
+  ws.onmessage = e => {
+    const d = JSON.parse(e.data);
+    if(d.type==='update') renderScoreboard(d.clans);
+  };
+  ws.onclose = ()=>setTimeout(connectWS, 2000);
+}
+connectWS();
 </script>
 </body>
 </html>
