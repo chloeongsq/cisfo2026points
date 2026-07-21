@@ -410,6 +410,11 @@ canvas#bg{position:fixed;inset:0;z-index:0;pointer-events:none}
       <input type="password" id="pwNew" placeholder="New password"/>
       <button class="pw-save-btn" onclick="changePw()">Update Password</button>
     </div>
+    <div class="pw-section" style="margin-top:16px">
+      <label>Google Sheets Webhook URL</label>
+      <input type="url" id="sheetsUrl" placeholder="https://script.google.com/macros/s/…/exec" style="font-size:0.75rem"/>
+      <button class="pw-save-btn" onclick="saveSheets()">Save Webhook</button>
+    </div>
   </div>
 </div>
 
@@ -614,7 +619,12 @@ async function doReset(){
 }
 
 // ── Settings ───────────────────────────────────────
-function openSettings(){document.getElementById('settingsModal').classList.add('open');renderSettingsGrid()}
+async function openSettings(){
+  document.getElementById('settingsModal').classList.add('open');
+  renderSettingsGrid();
+  // Pre-fill webhook URL
+  try{const s=await fetch('/api/settings').then(r=>r.json());document.getElementById('sheetsUrl').value=s.sheets_webhook_url||''}catch(e){}
+}
 function closeSettings(){document.getElementById('settingsModal').classList.remove('open')}
 function renderSettingsGrid(){
   document.getElementById('settingsGrid').innerHTML=teams.map(t=>`
@@ -630,6 +640,12 @@ function renderSettingsGrid(){
 async function saveTeam(id){
   await fetch(`/api/teams/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:document.getElementById(`te-nm-${id}`).value,emoji:document.getElementById(`te-em-${id}`).value,color:document.getElementById(`te-cl-${id}`).value})});
   await loadAll();render();toast('Saved!');
+}
+async function saveSheets(){
+  const url=document.getElementById('sheetsUrl').value.trim();
+  const pw=sessionStorage.getItem('oc_pw');
+  const r=await fetch('/api/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({current_password:pw,sheets_webhook_url:url})});
+  if(r.ok) toast('Webhook saved!'); else toast('Failed to save',true);
 }
 async function changePw(){
   const r=await fetch('/api/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({current_password:document.getElementById('pwOld').value,password:document.getElementById('pwNew').value})});

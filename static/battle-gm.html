@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Battle of the Verses — GM</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a1a;--card:rgba(255,255,255,0.06);--border:rgba(255,255,255,0.12);
+  --text:#f0f0ff;--muted:#8888aa;--accent:#a78bfa;--green:#4ade80;--red:#f87171;
+}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  min-height:100vh;padding:0 0 40px;
+  background-image:radial-gradient(ellipse at 20% 20%,rgba(100,50,200,0.15) 0%,transparent 60%),
+    radial-gradient(ellipse at 80% 80%,rgba(50,100,200,0.12) 0%,transparent 60%);
+}
+header{
+  text-align:center;padding:28px 20px 20px;
+  border-bottom:1px solid var(--border);
+  background:rgba(0,0,0,0.3);
+}
+header h1{font-size:1.5rem;font-weight:800;letter-spacing:0.03em;
+  background:linear-gradient(135deg,#f0c040,#c084fc,#60a5fa);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+header p{color:var(--muted);font-size:0.8rem;margin-top:4px}
+main{max-width:480px;margin:0 auto;padding:20px 16px;display:flex;flex-direction:column;gap:16px}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px}
+.card-title{font-size:0.7rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:14px}
+
+label{display:block;font-size:0.75rem;color:var(--muted);margin-bottom:6px}
+select,input[type=number]{
+  width:100%;background:rgba(0,0,0,0.4);border:1.5px solid var(--border);
+  border-radius:10px;color:var(--text);font-size:0.95rem;padding:12px 14px;
+  outline:none;-webkit-appearance:none;appearance:none;
+}
+select:focus,input[type=number]:focus{border-color:var(--accent)}
+.field{margin-bottom:14px}
+.field:last-child{margin-bottom:0}
+
+.quick-btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.qb{flex:1;min-width:60px;padding:8px 6px;border-radius:8px;border:1px solid var(--border);
+  background:rgba(255,255,255,0.04);color:var(--text);font-size:0.82rem;cursor:pointer;
+  transition:background 0.15s}
+.qb:hover{background:rgba(255,255,255,0.1)}
+.qb.pos{border-color:rgba(74,222,128,0.4);color:var(--green)}
+.qb.neg{border-color:rgba(248,113,113,0.4);color:var(--red)}
+.qb.pos:hover{background:rgba(74,222,128,0.1)}
+.qb.neg:hover{background:rgba(248,113,113,0.1)}
+
+.submit-btn{
+  width:100%;padding:14px;border-radius:12px;border:none;cursor:pointer;
+  font-size:1rem;font-weight:700;letter-spacing:0.03em;
+  background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;
+  transition:opacity 0.2s,transform 0.1s;margin-top:16px;
+}
+.submit-btn:hover{opacity:0.9}
+.submit-btn:active{transform:scale(0.98)}
+.submit-btn:disabled{opacity:0.4;cursor:not-allowed}
+
+.scoreboard{display:flex;flex-direction:column;gap:8px}
+.sb-row{
+  display:flex;align-items:center;gap:10px;
+  background:rgba(0,0,0,0.3);border:1px solid var(--border);
+  border-radius:10px;padding:10px 14px;
+}
+.sb-rank{font-size:0.75rem;color:var(--muted);min-width:20px;text-align:center}
+.sb-emoji{font-size:1.1rem}
+.sb-name{flex:1;font-size:0.85rem}
+.sb-pts{font-size:1rem;font-weight:700;min-width:52px;text-align:right}
+.sb-pts.pos{color:var(--green)}
+.sb-pts.neg{color:var(--red)}
+.sb-pts.zero{color:var(--muted)}
+
+.log-list{display:flex;flex-direction:column;gap:6px}
+.log-row{
+  display:flex;align-items:center;gap:8px;
+  font-size:0.78rem;color:var(--muted);
+  background:rgba(0,0,0,0.2);border-radius:8px;padding:8px 12px;
+}
+.log-delta{font-weight:700;min-width:48px}
+.log-delta.pos{color:var(--green)}
+.log-delta.neg{color:var(--red)}
+.log-who{flex:1}
+.log-time{font-size:0.7rem;opacity:0.6}
+
+.toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  background:#1e1e3a;border:1px solid var(--border);border-radius:12px;
+  padding:10px 20px;font-size:0.85rem;pointer-events:none;
+  opacity:0;transition:opacity 0.2s;z-index:999;white-space:nowrap;
+}
+.toast.show{opacity:1}
+.toast.ok{border-color:var(--green);color:var(--green)}
+.toast.err{border-color:var(--red);color:var(--red)}
+
+#exceptSection{display:none;margin-top:12px}
+</style>
+</head>
+<body>
+<header>
+  <h1>⚔️ The Battle of the Verses</h1>
+  <p>Game Master Control</p>
+</header>
+
+<main>
+  <!-- Input card -->
+  <div class="card">
+    <div class="card-title">Adjust Points</div>
+
+    <div class="field">
+      <label>Clan</label>
+      <select id="clanSelect" onchange="onClanChange()">
+        <option value="">— Select Clan —</option>
+        <option value="mystery">💛 Mystery-verse</option>
+        <option value="sky">🩵 Sky-verse</option>
+        <option value="crimson">❤️ Crimson-verse</option>
+        <option value="shadow">🖤 Shadow-verse</option>
+        <option value="tech">💙 Tech-verse</option>
+        <option value="nova">🩷 Nova-verse</option>
+        <option value="chaos">💜 Chaos-verse</option>
+        <option value="everyone">🌍 Everyone</option>
+        <option value="except">🚫 Everyone except...</option>
+      </select>
+    </div>
+
+    <div id="exceptSection" class="field">
+      <label>Exclude which clan?</label>
+      <select id="exceptSelect">
+        <option value="mystery">💛 Mystery-verse</option>
+        <option value="sky">🩵 Sky-verse</option>
+        <option value="crimson">❤️ Crimson-verse</option>
+        <option value="shadow">🖤 Shadow-verse</option>
+        <option value="tech">💙 Tech-verse</option>
+        <option value="nova">🩷 Nova-verse</option>
+        <option value="chaos">💜 Chaos-verse</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Points Change</label>
+      <input type="number" id="deltaInput" placeholder="e.g. 100 or -100">
+      <div class="quick-btns">
+        <button class="qb pos" onclick="setDelta(50)">+50</button>
+        <button class="qb pos" onclick="setDelta(100)">+100</button>
+        <button class="qb pos" onclick="setDelta(200)">+200</button>
+        <button class="qb neg" onclick="setDelta(-50)">−50</button>
+        <button class="qb neg" onclick="setDelta(-100)">−100</button>
+        <button class="qb neg" onclick="setDelta(-200)">−200</button>
+      </div>
+    </div>
+
+    <button class="submit-btn" onclick="submitAdjust()">Apply Points</button>
+  </div>
+
+  <!-- Scoreboard -->
+  <div class="card">
+    <div class="card-title">Current Standings</div>
+    <div class="scoreboard" id="scoreboard">
+      <div style="color:var(--muted);font-size:0.8rem;text-align:center;padding:10px">Loading…</div>
+    </div>
+  </div>
+
+  <!-- Log -->
+  <div class="card">
+    <div class="card-title">Recent Adjustments</div>
+    <div class="log-list" id="logList">
+      <div style="color:var(--muted);font-size:0.8rem;text-align:center;padding:10px">None yet</div>
+    </div>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const ALL_CLANS = [
+  {id:'mystery',name:'Mystery-verse',emoji:'💛'},
+  {id:'sky',    name:'Sky-verse',    emoji:'🩵'},
+  {id:'crimson',name:'Crimson-verse',emoji:'❤️'},
+  {id:'shadow', name:'Shadow-verse', emoji:'🖤'},
+  {id:'tech',   name:'Tech-verse',   emoji:'💙'},
+  {id:'nova',   name:'Nova-verse',   emoji:'🩷'},
+  {id:'chaos',  name:'Chaos-verse',  emoji:'💜'},
+];
+
+let recentLog = [];
+
+function onClanChange(){
+  const v = document.getElementById('clanSelect').value;
+  document.getElementById('exceptSection').style.display = v==='except' ? 'block' : 'none';
+}
+
+function setDelta(n){
+  document.getElementById('deltaInput').value = n;
+}
+
+function resolveClanIds(){
+  const v = document.getElementById('clanSelect').value;
+  if(!v) return null;
+  if(v === 'everyone') return ALL_CLANS.map(c=>c.id);
+  if(v === 'except'){
+    const ex = document.getElementById('exceptSelect').value;
+    return ALL_CLANS.filter(c=>c.id!==ex).map(c=>c.id);
+  }
+  return [v];
+}
+
+function labelForSelection(){
+  const v = document.getElementById('clanSelect').value;
+  if(v==='everyone') return 'Everyone';
+  if(v==='except'){
+    const ex = document.getElementById('exceptSelect').value;
+    const clan = ALL_CLANS.find(c=>c.id===ex);
+    return `Everyone except ${clan?.emoji} ${clan?.name}`;
+  }
+  const clan = ALL_CLANS.find(c=>c.id===v);
+  return clan ? `${clan.emoji} ${clan.name}` : '';
+}
+
+async function submitAdjust(){
+  const clan_ids = resolveClanIds();
+  if(!clan_ids){ toast('Select a clan first!', true); return; }
+  const delta = parseInt(document.getElementById('deltaInput').value);
+  if(!delta || isNaN(delta)){ toast('Enter a points value!', true); return; }
+
+  const btn = document.querySelector('.submit-btn');
+  btn.disabled = true;
+  try {
+    const r = await fetch('/api/battle/adjust', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({clan_ids, delta, note: labelForSelection()})
+    });
+    const j = await r.json();
+    if(r.ok){
+      recentLog.unshift({label: labelForSelection(), delta, time: new Date().toLocaleTimeString()});
+      if(recentLog.length > 8) recentLog.pop();
+      renderScoreboard(j.clans);
+      renderLog();
+      toast(delta>0 ? `+${delta} applied ✓` : `${delta} applied ✓`, false);
+      document.getElementById('deltaInput').value = '';
+    } else {
+      toast('Error!', true);
+    }
+  } catch(e){ toast('Network error', true); }
+  btn.disabled = false;
+}
+
+function renderScoreboard(clans){
+  const sorted = [...clans].sort((a,b)=>b.total-a.total);
+  document.getElementById('scoreboard').innerHTML = sorted.map((c,i)=>`
+    <div class="sb-row">
+      <div class="sb-rank">${i+1}</div>
+      <div class="sb-emoji">${c.emoji}</div>
+      <div class="sb-name">${c.name}</div>
+      <div class="sb-pts ${c.total>0?'pos':c.total<0?'neg':'zero'}">${c.total>0?'+':''}${c.total}</div>
+    </div>`).join('');
+}
+
+function renderLog(){
+  if(!recentLog.length){
+    document.getElementById('logList').innerHTML = '<div style="color:var(--muted);font-size:0.8rem;text-align:center;padding:10px">None yet</div>';
+    return;
+  }
+  document.getElementById('logList').innerHTML = recentLog.map(r=>`
+    <div class="log-row">
+      <div class="log-delta ${r.delta>0?'pos':'neg'}">${r.delta>0?'+':''}${r.delta}</div>
+      <div class="log-who">${r.label}</div>
+      <div class="log-time">${r.time}</div>
+    </div>`).join('');
+}
+
+let toastTimer;
+function toast(msg, isErr=false){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show ' + (isErr?'err':'ok');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>{ el.className='toast'; }, 2000);
+}
+
+// Initial load
+fetch('/api/battle/totals').then(r=>r.json()).then(renderScoreboard);
+
+// Live WebSocket
+const ws = new WebSocket(`${location.protocol==='https:'?'wss':'ws'}://${location.host}/ws/battle`);
+ws.onmessage = e => {
+  const d = JSON.parse(e.data);
+  if(d.type==='update') renderScoreboard(d.clans);
+};
+</script>
+</body>
+</html>

@@ -509,14 +509,14 @@ select optgroup{color:var(--muted);font-size:0.8rem}
         <div class="preset-list" id="presetList"></div>
       </div>
 
-      <!-- multiplier_1: handicap charades -->
+      <!-- multiplier_1: counter × multiplier (label set dynamically) -->
       <div id="ui_multiplier_1" class="card" style="display:none">
-        <span class="lbl">Number of Correct Guesses</span>
-        <input type="number" id="guessInput" min="0" placeholder="e.g. 7"
+        <span class="lbl" id="multLbl">Score</span>
+        <input type="number" id="guessInput" min="0" placeholder="0"
           oninput="updateMultiplier()"
           style="width:100%;background:rgba(0,0,0,0.4);border:1.5px solid var(--border);color:var(--text);padding:16px;border-radius:12px;font-size:1.5rem;font-family:'Orbitron',monospace;outline:none;text-align:center;font-weight:900"/>
         <div class="multiplier-display">
-          <div class="mult-equation" id="multEq">0 × 20 pts = </div>
+          <div class="mult-equation" id="multEq">0 × 2 pts = </div>
           <div class="mult-result" id="multResult">0 pts</div>
         </div>
       </div>
@@ -555,13 +555,13 @@ select optgroup{color:var(--muted);font-size:0.8rem}
         </div>
       </div>
 
-      <!-- relay: assign places -->
+      <!-- relay: team + points dropdowns -->
       <div id="ui_relay" style="display:none">
         <div class="card">
-          <span class="lbl">🏃 Assign Places</span>
+          <span class="lbl">🏃 Assign Teams & Points</span>
           <div class="relay-list" id="relayList"></div>
           <div style="font-size:0.75rem;color:var(--muted);margin-top:10px;text-align:center">
-            Teams not placed receive 0 points
+            Leave blank for teams not placing
           </div>
         </div>
       </div>
@@ -714,7 +714,7 @@ function goNext(){
   if(currentStep===1){
     if(!selGame){toast('Select a game first!',true);return}
     setupStep2();
-    goStep(2);
+    if(currentStep===1) goStep(2);
   } else if(currentStep===2){
     if(!validateStep2()) return;
     setupStep3();
@@ -800,9 +800,11 @@ function setupStep3(){
   if(ui==='win_lose_2'){
     document.getElementById('ui_win_lose_2').style.display='block';
     const win=cfg.win||0, lose=cfg.lose??0;
+    const tie=Math.floor((win+lose)/2);
     document.getElementById('wlRow').innerHTML=`
       <button class="wl-btn win-a" onclick="setWinLose(1)">🏆 ${t1?.emoji} ${t1?.name.replace('-verse','')} Wins</button>
-      <button class="wl-btn win-b" onclick="setWinLose(2)">🏆 ${t2?.emoji} ${t2?.name.replace('-verse','')} Wins</button>`;
+      <button class="wl-btn win-b" onclick="setWinLose(2)">🏆 ${t2?.emoji} ${t2?.name.replace('-verse','')} Wins</button>
+      <button class="wl-btn" style="flex:1;border-color:rgba(251,191,36,0.4);color:#fbbf24" onclick="setWinLose(0)">🤝 Tie (${tie} pts each)</button>`;
     document.getElementById('wlCols').innerHTML=`
       <div>
         <div class="col-header" style="color:${t1?.color}">${t1?.emoji} ${t1?.name.replace('-verse','')}</div>
@@ -855,6 +857,7 @@ function setupStep3(){
   else if(ui==='multiplier_1'){
     document.getElementById('ui_multiplier_1').style.display='block';
     document.getElementById('guessInput').value='';
+    document.getElementById('multLbl').textContent=cfg.label||'Score';
     updateMultiplier();
   }
   else if(ui==='captains_ball'){
@@ -879,18 +882,22 @@ function setupStep3(){
   else if(ui==='relay'){
     document.getElementById('ui_relay').style.display='block';
     const places=cfg.places||[400,300,200,100];
-    const medals=['🥇','🥈','🥉','4️⃣'];
-    document.getElementById('relayList').innerHTML=places.map((p,i)=>`
+    const teamOpts=`<option value="">— Team —</option>${teams.map(t=>`<option value="${t.id}">${t.emoji} ${t.name.replace('-verse','')}</option>`).join('')}`;
+    const ptsOpts=places.map(p=>`<option value="${p}">${p} pts</option>`).join('');
+    document.getElementById('relayList').innerHTML=places.map((_,i)=>`
       <div class="relay-row">
-        <div class="relay-place">${medals[i]||i+1}</div>
-        <div class="relay-pts">${p} pts</div>
-        <div class="relay-select sel-wrap">
-          <select onchange="setRelayPlace(${i+1},this.value)">
-            <option value="">— Select —</option>
-            ${teams.map(t=>`<option value="${t.id}">${t.emoji} ${t.name.replace('-verse','')}</option>`).join('')}
+        <div style="font-size:0.75rem;color:var(--muted);min-width:28px;text-align:center">${i+1}.</div>
+        <div class="relay-select sel-wrap" style="flex:2">
+          <select onchange="setRelayTeam(${i},this.value)">${teamOpts}</select>
+        </div>
+        <div class="relay-select sel-wrap" style="flex:1">
+          <select onchange="setRelayPts(${i},this.value)">
+            <option value="">— Pts —</option>
+            ${ptsOpts}
           </select>
         </div>
       </div>`).join('');
+    relayPlaces={};
   }
   else if(ui==='scavenger'){
     document.getElementById('ui_scavenger').style.display='block';
@@ -937,10 +944,13 @@ function updateTally2Display(){
 function setWinLose(winner){
   const cfg=JSON.parse(selGame.config||'{}');
   const win=cfg.win||0, lose=cfg.lose??0;
-  tally1=winner===1?win:lose;
-  tally2=winner===2?win:lose;
+  const tie=Math.floor((win+lose)/2);
+  if(winner===0){tally1=tie;tally2=tie;}
+  else{tally1=winner===1?win:lose;tally2=winner===2?win:lose;}
   document.querySelectorAll('.wl-btn').forEach(el=>el.classList.remove('sel'));
-  document.querySelectorAll('.wl-btn')[winner-1].classList.add('sel');
+  const btns=document.querySelectorAll('.wl-btn');
+  if(winner===0)btns[2]?.classList.add('sel');
+  else btns[winner-1]?.classList.add('sel');
   const e1=document.getElementById('wlTally1'),e2=document.getElementById('wlTally2');
   if(e1){e1.textContent=(tally1>0?'+':'')+tally1;e1.className='tally-val'+(tally1>0?' pos':tally1<0?' neg':' zero')}
   if(e2){e2.textContent=(tally2>0?'+':'')+tally2;e2.className='tally-val'+(tally2>0?' pos':tally2<0?' neg':' zero')}
@@ -956,8 +966,9 @@ function selectPreset(pts, btn){
 
 function updateMultiplier(){
   const v=parseInt(document.getElementById('guessInput').value)||0;
-  multValue=v*20;
-  document.getElementById('multEq').textContent=`${v} × 20 pts =`;
+  const mult=JSON.parse(selGame?.config||'{}').multiplier||1;
+  multValue=v*mult;
+  document.getElementById('multEq').textContent=`${v} × ${mult} pts =`;
   document.getElementById('multResult').textContent=`${multValue} pts`;
   updateSummary();
 }
@@ -972,10 +983,13 @@ function updateCBDisplay(){
   document.getElementById('cb_scoreB').textContent=cbScoreB;
   const t1=teams.find(t=>t.id===team1);
   const t2=teams.find(t=>t.id===team2);
+  const cfg=JSON.parse(selGame?.config||'{}');
+  const win=cfg.win||250;
+  const tie=Math.floor(win/2);
   const res=document.getElementById('cbResult');
-  if(cbScoreA>cbScoreB) res.textContent=`${t1?.emoji} ${t1?.name.replace('-verse','')} leads → wins 250 pts!`;
-  else if(cbScoreB>cbScoreA) res.textContent=`${t2?.emoji} ${t2?.name.replace('-verse','')} leads → wins 250 pts!`;
-  else res.textContent='Tied — first goal wins 250 pts!';
+  if(cbScoreA>cbScoreB) res.textContent=`${t1?.emoji} ${t1?.name.replace('-verse','')} leads → wins ${win} pts!`;
+  else if(cbScoreB>cbScoreA) res.textContent=`${t2?.emoji} ${t2?.name.replace('-verse','')} leads → wins ${win} pts!`;
+  else res.textContent=`🤝 Tied — submit for ${tie} pts each`;
 }
 
 function pickRound(round, teamIdx){
@@ -995,12 +1009,14 @@ function updateSplashSummary(){
     `${t1?.emoji} ${w1} round(s) = <strong>${w1*ppr} pts</strong><br>${t2?.emoji} ${w2} round(s) = <strong>${w2*ppr} pts</strong>`;
 }
 
-function setRelayPlace(place, teamId){
-  // Remove this team from other places
-  for(const k of Object.keys(relayPlaces)){
-    if(relayPlaces[k]===teamId) delete relayPlaces[k];
-  }
-  if(teamId) relayPlaces[place]=teamId;
+function setRelayTeam(i, teamId){
+  if(!relayPlaces[i]) relayPlaces[i]={teamId:'',pts:0};
+  relayPlaces[i].teamId=teamId;
+  updateSummary();
+}
+function setRelayPts(i, pts){
+  if(!relayPlaces[i]) relayPlaces[i]={teamId:'',pts:0};
+  relayPlaces[i].pts=parseInt(pts)||0;
   updateSummary();
 }
 
@@ -1036,13 +1052,12 @@ async function submitPoints(){
   let ok=false;
 
   if(ui==='relay'){
-    const places=cfg.places||[400,300,200,100];
     const evs=[];
-    for(let i=0;i<places.length;i++){
-      const tid=relayPlaces[i+1];
-      if(tid) evs.push({game_id:selGame.id,game_name:selGame.name,team1_id:tid,points1:places[i],event_type:'game',day:currentDay,note:`Place ${i+1}`});
+    for(const[i,row] of Object.entries(relayPlaces)){
+      if(row.teamId && row.pts>0)
+        evs.push({game_id:selGame.id,game_name:selGame.name,team1_id:row.teamId,points1:row.pts,event_type:'game',day:currentDay,note:`Row ${+i+1}`});
     }
-    if(!evs.length){toast('Assign at least one place!',true);return}
+    if(!evs.length){toast('Assign at least one team and points!',true);return}
     const r=await fetch('/api/submit-batch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({events:evs})});
     ok=r.ok;
   }
@@ -1066,9 +1081,11 @@ async function submitPoints(){
   }
   else if(ui==='captains_ball'){
     const win=cfg.win||250;
+    const tie=Math.floor(win/2);
     let p1=0,p2=0;
-    if(cbScoreA>cbScoreB) p1=win; else if(cbScoreB>cbScoreA) p2=win;
-    else{toast('Scores are tied — no winner yet!',true);return}
+    if(cbScoreA>cbScoreB) p1=win;
+    else if(cbScoreB>cbScoreA) p2=win;
+    else{p1=tie;p2=tie;}
     const body={game_id:selGame.id,game_name:selGame.name,team1_id:team1,team2_id:team2,points1:p1,points2:p2,event_type:'game',day:currentDay,note:`${cbScoreA}-${cbScoreB} goals`};
     const r=await fetch('/api/submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     ok=r.ok;
